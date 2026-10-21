@@ -91,7 +91,7 @@
     /* toolbar */
     .toolbar { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
     .seg { display: inline-flex; flex-wrap: wrap; gap: 6px; }
-    .seg button, .chips button {
+    .seg button {
       border: 1px solid var(--line);
       background: var(--chip);
       color: var(--ink);
@@ -100,12 +100,12 @@
       border-radius: 999px;
       cursor: pointer;
     }
-    .seg button[aria-pressed="true"], .chips button[aria-pressed="true"] {
+    .seg button[aria-pressed="true"] {
       background: var(--chip-on);
       color: var(--chip-on-ink);
       border-color: var(--chip-on);
     }
-    .seg button:hover, .chips button:hover { filter: brightness(0.97); }
+    .seg button:hover { filter: brightness(0.97); }
     .custom-range { display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .custom-range label { font-size: 13px; color: var(--ink-2); }
     .custom-range input[type="date"] {
@@ -129,8 +129,6 @@
     .avg-box .v small { font-size: 13.5px; font-family: var(--font-body); color: var(--ink-2); font-weight: 400; }
     .avg-box .d { font-size: 12.5px; color: var(--ink-3); margin-top: 2px; }
     @media (max-width: 640px) { .avg-box { margin-left: 0; width: 100%; } }
-    .theme-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 12px; }
-    .theme-row .lbl { font-size: 13px; color: var(--ink-2); margin-right: 2px; }
     .series-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; }
     .series-row .lbl { font-size: 13px; color: var(--ink-2); margin-right: 2px; }
     .tgl { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: var(--surface-2); border-radius: 999px; padding: 7px 11px 7px 9px; font: 500 13px/1 var(--font-body); color: var(--ink); cursor: pointer; }
@@ -255,8 +253,7 @@
 </head>
 <body>
 <main>
-  <h1>Fourteen years of blood pressure</h1>
-  <p class="lede">Every reading from the log, on one chart. Pick a date range, filter by what the readings were about (sleep, workouts, meds…), and ask questions in plain language underneath.</p>
+  <h1>Blood pressure readings</h1>
   <p class="dataline" id="dataLine">—</p>
   <p class="share-note"><strong>The page to share with your provider.</strong> This chart lives at one fixed address — when new readings are added, they appear here, so the link you hand over never changes.</p>
 
@@ -281,18 +278,6 @@
         <div class="k">Average for this period</div>
         <div class="v" id="avgVal">—</div>
         <div class="d" id="avgDetail"></div>
-      </div>
-    </div>
-    <div class="theme-row">
-      <span class="lbl">Focus on:</span>
-      <div class="chips" id="themeChips" role="group" aria-label="Note themes">
-        <button data-theme="all" aria-pressed="true">All readings</button>
-        <button data-theme="sleep" aria-pressed="false">Sleep</button>
-        <button data-theme="exercise" aria-pressed="false">Exercise</button>
-        <button data-theme="meds" aria-pressed="false">Meds</button>
-        <button data-theme="stress" aria-pressed="false">Stress</button>
-        <button data-theme="alcohol" aria-pressed="false">Alcohol</button>
-        <button data-theme="clinic" aria-pressed="false">Doctor visits</button>
       </div>
     </div>
     <div class="series-row">
@@ -348,7 +333,7 @@
 
   <div class="card" style="margin-top:16px">
     <h2>Ask about your readings</h2>
-    <p class="lede" style="font-size:13.5px">Questions use the range and theme you picked above, unless you name a different time.</p>
+    <p class="lede" style="font-size:13.5px">Questions use the range you picked above, unless you name a different time.</p>
     <div class="ask-row">
       <input type="text" id="askInput" placeholder="e.g. What were the general comments or sentiment?" aria-label="Ask about your readings" />
       <button id="askBtn">Ask</button>
@@ -1230,14 +1215,6 @@ const BP_ROWS=[{"d":"2012-09-10","t":null,"s":159,"di":100,"p":null,"n":0},{"d":
   }));
   $("#fromDate").addEventListener("change", (e) => setCustomRange(e.target.value, $("#toDate").value));
   $("#toDate").addEventListener("change", (e) => setCustomRange($("#fromDate").value, e.target.value));
-
-  document.querySelectorAll("#themeChips button").forEach((b) => b.addEventListener("click", () => {
-    document.querySelectorAll("#themeChips button").forEach((x) => x.setAttribute("aria-pressed", "false"));
-    b.setAttribute("aria-pressed", "true");
-    state.theme = b.dataset.theme;
-    state.hl = null;
-    renderAll();
-  }));
 
   [["#tgSys", "showSys"], ["#tgDia", "showDia"], ["#tgPulse", "showPulse"], ["#tgTrend", "showTrend"]].forEach(([id, key]) => {
     $(id).addEventListener("click", () => {
