@@ -1,0 +1,1269 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <link rel="icon" href="data:," />
+  <title>Blood Pressure Graph</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f7f5f1;
+      --surface: #ffffff;
+      --surface-2: #f1ede7;
+      --ink: #20242a;
+      --ink-2: #59616c;
+      --ink-3: #8a928f;
+      --line: #e3ddd3;
+      --accent: #b3402e;
+      --sys: #d6493b;
+      --dia: #2a6fd6;
+      --pulse: #c4760f;
+      --trend: #6b7280;
+      --band-high: rgba(214, 73, 59, 0.07);
+      --band-ok: rgba(42, 111, 214, 0.05);
+      --chip: #efe9df;
+      --chip-on: #20242a;
+      --chip-on-ink: #ffffff;
+      --mark-note: #20242a;
+      --mark-med: #b3402e;
+      --radius: 12px;
+      --shadow: 0 1px 2px rgba(32,36,42,.06), 0 8px 24px rgba(32,36,42,.06);
+      --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --font-head: "Spectral", Georgia, serif;
+      --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0e1114;
+        --surface: #161b21;
+        --surface-2: #1d242c;
+        --ink: #e9ebee;
+        --ink-2: #a7b0ba;
+        --ink-3: #6d7680;
+        --line: #272e36;
+        --accent: #f0665a;
+        --sys: #f0665a;
+        --dia: #5b9cf6;
+        --pulse: #e8a33d;
+        --band-high: rgba(240, 102, 90, 0.09);
+        --band-ok: rgba(91, 156, 246, 0.07);
+        --chip: #232a33;
+        --chip-on: #e9ebee;
+        --chip-on-ink: #14181d;
+        --mark-note: #e9ebee;
+        --mark-med: #f0665a;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+    main { max-width: 1160px; margin: 0 auto; padding: 28px 18px 60px; }
+    h1, h2, h3 { font-family: var(--font-head); font-weight: 600; letter-spacing: -0.01em; }
+    h1 { font-size: 30px; margin: 0 0 4px; }
+    h2 { font-size: 21px; margin: 0 0 10px; }
+    h3 { font-size: 17px; margin: 0 0 8px; }
+    .lede { color: var(--ink-2); margin: 0 0 6px; max-width: 62ch; }
+    .dataline { color: var(--ink-3); font-size: 13px; margin: 0 0 6px; font-family: var(--font-mono); }
+    .share-note { color: var(--ink-2); font-size: 13.5px; margin: 0 0 18px; max-width: 62ch; }
+    .share-note strong { color: var(--ink); font-weight: 600; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      margin: 0 0 16px;
+    }
+
+    /* toolbar */
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+    .seg { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+    .seg button, .chips button {
+      border: 1px solid var(--line);
+      background: var(--chip);
+      color: var(--ink);
+      font: 500 13px/1 var(--font-body);
+      padding: 9px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+    .seg button[aria-pressed="true"], .chips button[aria-pressed="true"] {
+      background: var(--chip-on);
+      color: var(--chip-on-ink);
+      border-color: var(--chip-on);
+    }
+    .seg button:hover, .chips button:hover { filter: brightness(0.97); }
+    .custom-range { display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .custom-range label { font-size: 13px; color: var(--ink-2); }
+    .custom-range input[type="date"] {
+      font: 400 13px var(--font-body);
+      color: var(--ink);
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 7px 9px;
+    }
+    .avg-box {
+      margin-left: auto;
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 14px;
+      min-width: 200px;
+    }
+    .avg-box .k { font-size: 11.5px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+    .avg-box .v { font-family: var(--font-head); font-size: 27px; font-weight: 600; line-height: 1.15; font-variant-numeric: tabular-nums; }
+    .avg-box .v small { font-size: 13.5px; font-family: var(--font-body); color: var(--ink-2); font-weight: 400; }
+    .avg-box .d { font-size: 12.5px; color: var(--ink-3); margin-top: 2px; }
+    @media (max-width: 640px) { .avg-box { margin-left: 0; width: 100%; } }
+    .theme-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 12px; }
+    .theme-row .lbl { font-size: 13px; color: var(--ink-2); margin-right: 2px; }
+    .series-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; }
+    .series-row .lbl { font-size: 13px; color: var(--ink-2); margin-right: 2px; }
+    .tgl { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: var(--surface-2); border-radius: 999px; padding: 7px 11px 7px 9px; font: 500 13px/1 var(--font-body); color: var(--ink); cursor: pointer; }
+    .tgl[aria-pressed="false"] { opacity: 0.45; }
+    .sw { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+    .sw.line { height: 3px; border-radius: 2px; width: 16px; }
+
+    /* chart */
+    .chart-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin-bottom: 6px; }
+    .chart-head .sub { color: var(--ink-2); font-size: 13px; }
+    .chart-wrap { position: relative; width: 100%; }
+    .chart-wrap svg { display: block; width: 100%; height: auto; touch-action: pan-y; }
+    .chart-tip {
+      position: absolute; z-index: 5; pointer-events: none;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      border-radius: 10px;
+      padding: 9px 11px;
+      font-size: 13px;
+      max-width: 280px;
+      display: none;
+    }
+    .chart-tip .tt-date { font-weight: 600; margin-bottom: 2px; }
+    .chart-tip .tt-bp { font-family: var(--font-mono); font-size: 15px; margin: 2px 0; }
+    .chart-tip .tt-note { color: var(--ink-2); font-size: 12.5px; line-height: 1.45; margin-top: 4px; }
+    .chart-tip .tt-pulse { color: var(--ink-2); font-family: var(--font-mono); font-size: 12px; }
+    .pinned {
+      display: none; margin-top: 10px; padding: 10px 12px;
+      background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px;
+      font-size: 13.5px; gap: 10px; align-items: baseline;
+    }
+    .pinned.show { display: flex; }
+    .pinned .x { margin-left: auto; border: none; background: none; color: var(--ink-2); cursor: pointer; font-size: 16px; }
+    .legend-note { color: var(--ink-3); font-size: 12.5px; margin: 8px 0 0; }
+
+    /* stats */
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+    .stat {
+      background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 12px 14px; box-shadow: var(--shadow);
+    }
+    .stat .k { font-size: 12px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+    .stat .v { font-family: var(--font-head); font-size: 26px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+    .stat .v small { font-size: 14px; font-family: var(--font-body); color: var(--ink-2); font-weight: 400; }
+    .stat .d { font-size: 12.5px; color: var(--ink-3); margin-top: 3px; }
+    .stat .v .up { color: var(--accent); }
+    .stat .v .ok { color: #2e7d4f; }
+    @media (prefers-color-scheme: dark) { .stat .v .ok { color: #5fd08a; } }
+
+    /* two-col */
+    .cols { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 16px; }
+    @media (min-width: 900px) { .cols { grid-template-columns: 1.15fr 0.85fr; } }
+    .cols .card { margin: 0; }
+
+    /* notes */
+    .sent-bars { margin: 0 0 14px; }
+    .notes-list { max-height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px; }
+    .note-item {
+      border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px;
+      background: var(--surface); cursor: pointer; text-align: left; width: 100%;
+      font: inherit; color: inherit;
+    }
+    .note-item:hover { border-color: var(--ink-3); }
+    .note-item .ni-top { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+    .note-item .ni-date { font-size: 12.5px; color: var(--ink-3); font-family: var(--font-mono); }
+    .note-item .ni-bp { font-family: var(--font-mono); font-size: 14px; font-weight: 500; margin-left: auto; }
+    .note-item .ni-text { font-size: 13.5px; margin-top: 2px; }
+    .note-item .ni-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+    .ntag { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-2); }
+    .ntag.sent-neg { color: var(--accent); border-color: var(--accent); }
+    .empty { color: var(--ink-3); font-size: 14px; padding: 18px 6px; text-align: center; }
+
+    /* insights */
+    .insight-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    @media (min-width: 760px) { .insight-grid { grid-template-columns: 1fr 1fr; } }
+    .insight {
+      border: 1px solid var(--line); border-radius: 10px; padding: 13px 14px; background: var(--surface-2);
+    }
+    .insight h3 { font-size: 15px; font-family: var(--font-body); font-weight: 600; margin: 0 0 6px; }
+    .insight p { margin: 0; font-size: 13.5px; color: var(--ink-2); }
+    .insight p strong { color: var(--ink); font-weight: 600; }
+    .insight .n { font-size: 11.5px; color: var(--ink-3); margin-top: 6px; font-family: var(--font-mono); }
+
+    /* ask */
+    .ask-row { display: flex; gap: 8px; margin-bottom: 10px; }
+    .ask-row input {
+      flex: 1; font: 400 14.5px var(--font-body); color: var(--ink);
+      background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px;
+      padding: 12px 14px;
+    }
+    .ask-row button {
+      font: 600 14px var(--font-body); color: var(--chip-on-ink); background: var(--chip-on);
+      border: 1px solid var(--chip-on); border-radius: 10px; padding: 0 18px; cursor: pointer;
+    }
+    .examples { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .examples button {
+      font: 400 12.5px var(--font-body); color: var(--ink-2); background: transparent;
+      border: 1px solid var(--line); border-radius: 999px; padding: 7px 11px; cursor: pointer;
+    }
+    .examples button:hover { border-color: var(--ink-3); color: var(--ink); }
+    .answer { display: none; border-top: 1px solid var(--line); padding-top: 14px; font-size: 14px; }
+    .answer.show { display: block; }
+    .answer p { margin: 0 0 10px; max-width: 70ch; color: var(--ink-2); }
+    .answer p strong, .answer li strong { color: var(--ink); font-weight: 600; }
+    .answer .ans-q { font-family: var(--font-head); font-size: 16px; color: var(--ink); margin-bottom: 6px; }
+    .answer ul { margin: 0 0 10px; padding-left: 20px; color: var(--ink-2); }
+    .answer li { margin-bottom: 4px; }
+
+    .compare-table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-top: 8px; }
+    .compare-table th, .compare-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+    .compare-table th:first-child, .compare-table td:first-child { color: var(--ink-2); }
+    .compare-table td { font-variant-numeric: tabular-nums; }
+    .compare-table thead th { font-size: 12.5px; color: var(--ink-3); font-weight: 500; }
+    .verdict { font-size: 14.5px; margin: 10px 0 4px; color: var(--ink); }
+
+    .foot { color: var(--ink-3); font-size: 12.5px; margin-top: 26px; max-width: 70ch; }
+    .foot code { font-family: var(--font-mono); font-size: 12px; }
+    svg text { font-family: var(--font-mono); }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Fourteen years of blood pressure</h1>
+  <p class="lede">Every reading from the log, on one chart. Pick a date range, filter by what the readings were about (sleep, workouts, meds…), and ask questions in plain language underneath.</p>
+  <p class="dataline" id="dataLine">—</p>
+  <p class="share-note"><strong>The page to share with your provider.</strong> This chart lives at one fixed address — when new readings are added, they appear here, so the link you hand over never changes.</p>
+
+  <div class="card" id="toolbarCard">
+    <div class="toolbar" role="group" aria-label="Date range">
+      <div class="seg" id="rangeSeg" role="group" aria-label="Range presets">
+        <button data-range="all" aria-pressed="false">All time</button>
+        <button data-range="1095" aria-pressed="false">3 yr</button>
+        <button data-range="365" aria-pressed="false">1 yr</button>
+        <button data-range="180" aria-pressed="false">6 mo</button>
+        <button data-range="90" aria-pressed="false">90 d</button>
+        <button data-range="30" aria-pressed="true">30 d</button>
+        <button data-range="7" aria-pressed="false">7 d</button>
+      </div>
+      <div class="custom-range">
+        <label for="fromDate">From</label>
+        <input type="date" id="fromDate" min="2012-09-10" max="2026-10-21" />
+        <label for="toDate">To</label>
+        <input type="date" id="toDate" min="2012-09-10" max="2026-10-21" />
+      </div>
+      <div class="avg-box" id="avgBox" aria-live="polite">
+        <div class="k">Average for this period</div>
+        <div class="v" id="avgVal">—</div>
+        <div class="d" id="avgDetail"></div>
+      </div>
+    </div>
+    <div class="theme-row">
+      <span class="lbl">Focus on:</span>
+      <div class="chips" id="themeChips" role="group" aria-label="Note themes">
+        <button data-theme="all" aria-pressed="true">All readings</button>
+        <button data-theme="sleep" aria-pressed="false">Sleep</button>
+        <button data-theme="exercise" aria-pressed="false">Exercise</button>
+        <button data-theme="meds" aria-pressed="false">Meds</button>
+        <button data-theme="stress" aria-pressed="false">Stress</button>
+        <button data-theme="alcohol" aria-pressed="false">Alcohol</button>
+        <button data-theme="clinic" aria-pressed="false">Doctor visits</button>
+      </div>
+    </div>
+    <div class="series-row">
+      <span class="lbl">Show:</span>
+      <button class="tgl" id="tgSys" aria-pressed="true"><span class="sw line" style="background:var(--sys)"></span> Systolic</button>
+      <button class="tgl" id="tgDia" aria-pressed="true"><span class="sw line" style="background:var(--dia)"></span> Diastolic</button>
+      <button class="tgl" id="tgPulse" aria-pressed="false"><span class="sw line" style="background:var(--pulse)"></span> Pulse</button>
+      <button class="tgl" id="tgTrend" aria-pressed="true"><span class="sw line" style="background:var(--trend);height:2px"></span> Trend</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="chart-head">
+      <h2 id="chartTitle">All readings</h2>
+      <span class="sub" id="chartSub"></span>
+    </div>
+    <div class="chart-wrap" id="chartWrap">
+      <svg id="chart" role="img" aria-label="Blood pressure readings over time"></svg>
+      <div class="chart-tip" id="chartTip"></div>
+    </div>
+    <div class="pinned" id="pinned"></div>
+    <p class="legend-note">Hollow dots mark readings with notes; red diamonds mark notes about med changes. Hover or tap for details; tap a marked point to pin it.</p>
+  </div>
+
+  <div class="stats" id="statsRow"></div>
+
+  <div class="cols">
+    <div class="card">
+      <h2>Notes &amp; sentiment in this range</h2>
+      <div class="sent-bars" id="sentBars"></div>
+      <div class="notes-list" id="notesList"></div>
+    </div>
+    <div class="card">
+      <h2>Where your numbers cluster</h2>
+      <p style="color:var(--ink-2);font-size:13px;margin:0 0 8px">Systolic distribution for this range; bars at 140+ are the ones a provider would flag.</p>
+      <div id="histWrap"><svg id="hist" role="img" aria-label="Systolic distribution histogram"></svg></div>
+      <p style="color:var(--ink-2);font-size:13px;margin:12px 0 8px">Diastolic distribution; bars at 90+ flagged.</p>
+      <div id="histWrap2"><svg id="hist2" role="img" aria-label="Diastolic distribution histogram"></svg></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>Patterns worth noticing</h2>
+    <p class="lede" style="font-size:13.5px">Computed from the readings in this range — how context lines up with numbers.</p>
+    <div class="insight-grid" id="insights"></div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>This stretch vs. the one before it</h2>
+    <p class="lede" style="font-size:13.5px" id="compareLede">Compares the selected range against the equal-length window right before it.</p>
+    <div id="compareWrap"></div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>Ask about your readings</h2>
+    <p class="lede" style="font-size:13.5px">Questions use the range and theme you picked above, unless you name a different time.</p>
+    <div class="ask-row">
+      <input type="text" id="askInput" placeholder="e.g. What were the general comments or sentiment?" aria-label="Ask about your readings" />
+      <button id="askBtn">Ask</button>
+    </div>
+    <div class="examples" id="examples"></div>
+    <div class="answer" id="answer"></div>
+  </div>
+
+  <p class="foot" id="foot"></p>
+</main>
+
+<script>
+const BP_NOTES=["first day taking medicine","was sick","before workout","after workout","before blood drawn","after blood drawn","felt a little stressy","had been hiking in the canyon by the lake; was a little sweaty","had been doing yard work; still not sure if I did it right","after workout; second reading (recorded as '150/105 after workout 125/83')","was sick; just took medicine","healed tonsil trauma; had just woken up; date uncertain (recorded between 4-30 and 4-11-2013 entries)","130 heart rate; 30 minutes after workout","had interview","just got home from the store; not in great shape for this measurement","post workout; took first lisinopril at 115","same day as first lisinopril dose","took second pill right after BP reading; no workout today (rest day); date uncertain (recorded between 6-10 and 6-5-2013 entries)","after lunch and after neurologist appointment; date uncertain (recorded between 6-13 and 6-11 entries)","after crossfit","pulse 53","pulse 80","115 (time or pulse unclear in source)","pulse 108; after crossfit","pulse 43; before Ragnar; had not taken pill yet","pulse 69","pulse 96","source caption records 144/83 at 8am; photo of Mars MS-701 monitor showed 128/71","taken at hospital by Kelly","taken at marathon before the migraine","taken at marathon health","taken after spin class","taken at marathon","after half marathon","Marathon health","Marathon Health","Marathon (before taking bp medicine)","Marathon (couple hours after a 5 mile run)","allergy associates","Marathon (date uncertain, recorded near 8/24/2018 marathon readings)","marathon; hadn't taken bp medicine for two days because of half marathon tomorrow","marathon (date uncertain, recorded near 8/24/2018 marathon readings)","(date uncertain, recorded near 8/24/2018 marathon readings)","Marathon; had to run up the stairs when he realized he forgot his epipen (date uncertain)","marathon; started taking bp medicine yesterday after quitting for half marathon; was on Valsartan/Hydrochlorothiazide 320/25 mg, Julie Lassig suggested moving back to amlodipine","started amlodipine this morning; felt significant depression yesterday, a bit better today","marathon; kidney area pain around noon","marathon","experiencing more anxiety than usual","forgot to take bp medicine last night for the first time since starting amlodipine on 8/30","Julie suggested diltiazem if still cramping for the Thankful 13","taken from home","had chicken tacos last night","had short ribs and potatoes","had lemon chicken and rice with soy sauce","beef short ribs with mashed potato","rotisserie chicken and brussel sprouts","beef stew","at the marathon clinic","pho (linked to alcohol, not salt, per note)","7 beers over 8 hours","lots of shenanigans last night","2 beers, one cold brew fashioned","lots of drinks; ran at lunch and went to spin","6 whisky sours","6 shots of whiskey","at allergy appointment","@ marathon","(note read 3/34/2019, assumed 3/24)","@marathon","6 mile run yesterday","7.71 mile run yesterday","didn't sleep well last night","at bedtime after power yoga with Mallory for an hour and a mile run at lunch","marathon clinic","taken at marathon; hadn't taken meds in two or three days","started taking meds at night","(note read 12/80, assumed 112/80)","didn't take diltiazem last night; starting valsartin hydrochlorothyazide 320/25 this morning","first reading after valsartan/hctz","after taking BP medication","haven't taken meds for a couple days","still haven't taken","then took the valsartan/hctz","started the valsartin/hctz again this morning","stopped taking the valsartan because was really tired yesterday","still not taking BP medicine for third day","started taking amlodipine yesterday morning","@marathon (drank coffee)","taken later the same day","started vegan dinners last night","after half-marathon","evening after st George marathon","at Madsen","15 minutes after a run","started taking beet powder","average taken at Sugarhouse","felt dizzy","stopped taking hctz today","taken at arup","started taking double valsartan 320mg","started micro dosing","started ashwaghanda yesterday","started taking half of the Valsartan and 1 Depakote","last night was my last valsartan and depikote","did a moderately difficult step treadmill walk","hadn't been taking beet powder or BP meds in the last week; relapse after Christmas until Logan's birthday party on 1/4; started la dieta on the 5th","took beet powder yesterday; dieta going well","stressed about work this morning","after treadmill","after gym","taken at urgent care; started double the Losartan 50 mg that night","started taking beet powder with lion's mane, creatine, and taurine after these readings","took beet powder today and yesterday; exercised yesterday","at Dr Jawher appointment, average at noon; put on 75mg Losartan, come back in a month 10/17","started the increased dose of Losartan 75mg last night","drank on 9/20 and 9/21; hadn't exercised since 9/18","did meditation while taking BP","did meditation again","meditation","also started taking Acutane","had one reading of 105/86 but figured it was a fluke","even got in a fight with Kelly this morning about friends","all three readings were really good this morning; meditated for 10 minutes prior","only got about 5 hours of sleep; nervous about going to work gym for the first time","didn't sleep much last night","didn't sleep well; took BP lying down","on phenobarbital and still might be withdrawing; not sleeping","didn't sleep great; don't like how high it is","slept better last night, generally feeling better","feel good; slept pretty well; TM meditation","haven't been sleeping well; was falling asleep during the reading","slept better last night; had a little ice cream","from McKesson monitor photo; also recorded in Evernote note (taken at 12:46 pm per note); pretty tired; usually takes it in the morning","from McKesson monitor photo (1 of 3 taken this morning)","from McKesson monitor photo (2 of 3 taken this morning)","from McKesson monitor photo (3 of 3 taken this morning)","from McKesson monitor photo (1 of 3 taken this morning); less than 5 hours of sleep last night; mild persistent headache for a few days; stressful work day ahead but excited, feeling happy; good day fishing yesterday; hadn't eaten or had anything to drink yet this morning","from McKesson monitor photo (2 of 3 taken this morning); less than 5 hours of sleep last night; mild persistent headache for a few days; stressful work day ahead but excited, feeling happy; good day fishing yesterday; hadn't eaten or had anything to drink yet this morning","from McKesson monitor photo (3 of 3 taken this morning); DIA confirmed as 97, pulse 78; less than 5 hours of sleep last night; mild persistent headache for a few days; stressful work day ahead but excited, feeling happy; good day fishing yesterday; hadn't eaten or had anything to drink yet this morning","from McKesson monitor photo (1 of 3 taken this morning); feels good today; taken after meditating; tried smiling for a couple minutes beforehand, no apparent effect; immense salt intake yesterday; headache coming and going (thinks bun-related), seems to be getting better; slept 4h20m, not enough but feels good overall","from McKesson monitor photo (2 of 3 taken this morning); same notes as 09:44 reading","from McKesson monitor photo (3 of 3 taken this morning); same notes as 09:44 reading","from McKesson monitor photo (1 of 3 taken this morning); best sleep in a while last night (still under 6 hours, wants 8); ate an incredible amount of salt yesterday but BP not higher as expected; stress medium, lots to do before trip tomorrow, full workday with two important meetings; surprised BP lower than yesterday; feels good and healthy; no drink in ~3 weeks; diet not great but okay","from McKesson monitor photo (2 of 3 taken this morning); best sleep in a while last night (still under 6 hours, wants 8); ate an incredible amount of salt yesterday but BP not higher as expected; stress medium, lots to do before trip tomorrow, full workday with two important meetings; surprised BP lower than yesterday; feels good and healthy; no drink in ~3 weeks; diet not great but okay","from McKesson monitor photo (3 of 3 taken this morning); best sleep in a while last night (still under 6 hours, wants 8); ate an incredible amount of salt yesterday but BP not higher as expected; stress medium, lots to do before trip tomorrow, full workday with two important meetings; surprised BP lower than yesterday; feels good and healthy; no drink in ~3 weeks; diet not great but okay","from McKesson monitor photo (1 of 3 taken midday)","from McKesson monitor photo (2 of 3 taken midday)","from McKesson monitor photo (3 of 3 taken midday)"];
+const BP_ROWS=[{"d":"2012-09-10","t":null,"s":159,"di":100,"p":null,"n":0},{"d":"2012-09-11","t":null,"s":140,"di":89,"p":null,"n":null},{"d":"2012-09-12","t":null,"s":125,"di":92,"p":null,"n":1},{"d":"2012-09-13","t":null,"s":124,"di":79,"p":null,"n":null},{"d":"2012-09-14","t":null,"s":171,"di":80,"p":null,"n":2},{"d":"2012-09-14","t":null,"s":122,"di":74,"p":null,"n":3},{"d":"2012-09-17","t":null,"s":130,"di":89,"p":null,"n":null},{"d":"2012-09-18","t":null,"s":166,"di":100,"p":null,"n":4},{"d":"2012-09-18","t":null,"s":144,"di":80,"p":null,"n":5},{"d":"2012-09-18","t":null,"s":130,"di":90,"p":null,"n":3},{"d":"2012-09-20","t":null,"s":142,"di":98,"p":null,"n":2},{"d":"2012-09-20","t":null,"s":140,"di":90,"p":null,"n":3},{"d":"2012-09-24","t":null,"s":138,"di":82,"p":null,"n":2},{"d":"2012-09-24","t":null,"s":140,"di":80,"p":null,"n":3},{"d":"2013-03-22","t":null,"s":150,"di":82,"p":null,"n":6},{"d":"2013-04-03","t":null,"s":148,"di":72,"p":null,"n":7},{"d":"2013-04-04","t":null,"s":160,"di":89,"p":null,"n":8},{"d":"2013-04-08","t":null,"s":150,"di":105,"p":null,"n":3},{"d":"2013-04-08","t":null,"s":125,"di":83,"p":null,"n":9},{"d":"2013-04-11","t":null,"s":138,"di":92,"p":null,"n":10},{"d":"2013-04-20","t":null,"s":144,"di":94,"p":null,"n":11},{"d":"2013-04-30","t":"13:15","s":155,"di":95,"p":130,"n":12},{"d":"2013-05-08","t":null,"s":150,"di":98,"p":null,"n":13},{"d":"2013-05-30","t":null,"s":160,"di":98,"p":null,"n":null},{"d":"2013-06-04","t":null,"s":142,"di":90,"p":null,"n":14},{"d":"2013-06-05","t":null,"s":134,"di":90,"p":null,"n":15},{"d":"2013-06-05","t":null,"s":159,"di":110,"p":null,"n":16},{"d":"2013-06-08","t":"13:45","s":142,"di":76,"p":null,"n":17},{"d":"2013-06-10","t":null,"s":140,"di":80,"p":null,"n":null},{"d":"2013-06-11","t":null,"s":158,"di":82,"p":null,"n":null},{"d":"2013-06-12","t":null,"s":160,"di":70,"p":null,"n":18},{"d":"2013-06-13","t":"06:45","s":147,"di":90,"p":null,"n":19},{"d":"2013-06-13","t":"09:45","s":130,"di":90,"p":null,"n":null},{"d":"2013-06-13","t":"15:44","s":150,"di":100,"p":null,"n":null},{"d":"2013-06-14","t":"10:27","s":150,"di":98,"p":null,"n":null},{"d":"2013-06-14","t":"12:17","s":128,"di":82,"p":null,"n":null},{"d":"2013-06-14","t":"16:27","s":142,"di":90,"p":null,"n":null},{"d":"2013-06-14","t":"23:45","s":148,"di":82,"p":null,"n":null},{"d":"2013-06-15","t":"08:45","s":148,"di":55,"p":53,"n":20},{"d":"2013-06-15","t":"14:30","s":148,"di":77,"p":80,"n":21},{"d":"2013-06-17","t":null,"s":130,"di":78,"p":null,"n":22},{"d":"2013-06-17","t":"08:00","s":128,"di":77,"p":null,"n":null},{"d":"2013-06-17","t":"10:45","s":134,"di":74,"p":null,"n":null},{"d":"2013-06-19","t":"07:00","s":152,"di":86,"p":108,"n":23},{"d":"2013-06-20","t":"06:00","s":160,"di":72,"p":43,"n":24},{"d":"2013-06-24","t":null,"s":150,"di":84,"p":null,"n":null},{"d":"2013-06-25","t":null,"s":150,"di":82,"p":null,"n":null},{"d":"2013-06-26","t":null,"s":128,"di":72,"p":null,"n":null},{"d":"2013-06-27","t":null,"s":160,"di":72,"p":null,"n":null},{"d":"2013-06-28","t":null,"s":152,"di":60,"p":null,"n":null},{"d":"2013-07-03","t":null,"s":136,"di":68,"p":null,"n":null},{"d":"2013-07-05","t":null,"s":152,"di":60,"p":null,"n":null},{"d":"2013-07-08","t":null,"s":148,"di":82,"p":null,"n":null},{"d":"2013-07-08","t":null,"s":158,"di":92,"p":null,"n":null},{"d":"2013-07-09","t":null,"s":160,"di":72,"p":null,"n":null},{"d":"2013-07-10","t":null,"s":144,"di":78,"p":null,"n":null},{"d":"2013-07-14","t":"08:30","s":125,"di":66,"p":69,"n":25},{"d":"2013-07-22","t":null,"s":150,"di":80,"p":null,"n":null},{"d":"2013-07-23","t":null,"s":114,"di":72,"p":null,"n":null},{"d":"2013-07-29","t":null,"s":90,"di":58,"p":null,"n":null},{"d":"2013-07-31","t":null,"s":128,"di":70,"p":null,"n":null},{"d":"2013-08-09","t":null,"s":142,"di":74,"p":null,"n":null},{"d":"2013-08-13","t":null,"s":134,"di":84,"p":null,"n":null},{"d":"2013-08-14","t":null,"s":118,"di":60,"p":null,"n":null},{"d":"2013-08-19","t":null,"s":132,"di":78,"p":null,"n":null},{"d":"2013-08-21","t":null,"s":142,"di":74,"p":null,"n":null},{"d":"2013-08-27","t":null,"s":145,"di":80,"p":null,"n":null},{"d":"2013-09-04","t":null,"s":158,"di":90,"p":null,"n":null},{"d":"2013-09-05","t":null,"s":124,"di":68,"p":null,"n":null},{"d":"2013-09-06","t":null,"s":140,"di":78,"p":null,"n":null},{"d":"2013-09-09","t":null,"s":146,"di":79,"p":null,"n":null},{"d":"2013-09-10","t":null,"s":138,"di":80,"p":null,"n":null},{"d":"2013-09-11","t":null,"s":134,"di":84,"p":null,"n":null},{"d":"2013-09-11","t":null,"s":118,"di":80,"p":null,"n":null},{"d":"2013-09-16","t":null,"s":134,"di":84,"p":null,"n":null},{"d":"2013-09-19","t":null,"s":132,"di":74,"p":null,"n":null},{"d":"2013-09-23","t":null,"s":132,"di":84,"p":null,"n":null},{"d":"2013-09-24","t":null,"s":146,"di":70,"p":null,"n":null},{"d":"2013-09-25","t":null,"s":144,"di":88,"p":null,"n":null},{"d":"2013-09-26","t":null,"s":118,"di":70,"p":null,"n":null},{"d":"2013-10-01","t":null,"s":124,"di":84,"p":null,"n":null},{"d":"2013-10-07","t":null,"s":132,"di":86,"p":null,"n":null},{"d":"2013-10-08","t":null,"s":150,"di":105,"p":null,"n":null},{"d":"2013-10-09","t":null,"s":132,"di":88,"p":null,"n":null},{"d":"2013-10-10","t":null,"s":140,"di":72,"p":null,"n":null},{"d":"2013-10-11","t":null,"s":132,"di":88,"p":null,"n":null},{"d":"2013-10-15","t":null,"s":142,"di":68,"p":null,"n":null},{"d":"2013-10-18","t":null,"s":162,"di":70,"p":null,"n":null},{"d":"2013-10-21","t":null,"s":160,"di":92,"p":null,"n":null},{"d":"2013-10-22","t":null,"s":160,"di":96,"p":null,"n":null},{"d":"2013-10-30","t":null,"s":166,"di":110,"p":null,"n":null},{"d":"2013-11-04","t":null,"s":166,"di":92,"p":null,"n":null},{"d":"2013-11-05","t":null,"s":140,"di":78,"p":null,"n":null},{"d":"2013-11-06","t":null,"s":142,"di":88,"p":96,"n":26},{"d":"2013-11-06","t":null,"s":130,"di":90,"p":null,"n":null},{"d":"2013-11-13","t":null,"s":135,"di":80,"p":null,"n":null},{"d":"2013-11-21","t":null,"s":140,"di":90,"p":null,"n":null},{"d":"2013-12-12","t":null,"s":151,"di":102,"p":null,"n":null},{"d":"2013-12-17","t":null,"s":129,"di":85,"p":null,"n":null},{"d":"2013-12-27","t":null,"s":148,"di":82,"p":null,"n":null},{"d":"2013-12-30","t":null,"s":128,"di":80,"p":null,"n":null},{"d":"2013-12-31","t":null,"s":126,"di":84,"p":null,"n":null},{"d":"2014-01-02","t":null,"s":156,"di":84,"p":null,"n":null},{"d":"2015-01-07","t":"08:00","s":144,"di":83,"p":null,"n":27},{"d":"2016-09-13","t":"12:13","s":132,"di":75,"p":101,"n":null},{"d":"2016-09-14","t":"08:13","s":140,"di":86,"p":88,"n":null},{"d":"2016-09-20","t":"09:07","s":162,"di":82,"p":81,"n":null},{"d":"2016-10-10","t":"17:45","s":108,"di":76,"p":null,"n":28},{"d":"2017-01-25","t":"08:00","s":107,"di":86,"p":null,"n":null},{"d":"2017-01-26","t":"08:15","s":126,"di":81,"p":null,"n":null},{"d":"2017-01-30","t":"20:39","s":164,"di":85,"p":76,"n":null},{"d":"2017-01-31","t":"05:02","s":125,"di":97,"p":93,"n":null},{"d":"2017-01-31","t":"09:54","s":128,"di":88,"p":null,"n":29},{"d":"2017-02-02","t":"07:04","s":129,"di":86,"p":81,"n":null},{"d":"2017-02-06","t":"09:12","s":154,"di":106,"p":66,"n":null},{"d":"2017-02-07","t":"08:08","s":124,"di":91,"p":97,"n":null},{"d":"2017-02-07","t":"08:21","s":153,"di":100,"p":87,"n":null},{"d":"2017-02-08","t":"08:13","s":128,"di":91,"p":110,"n":null},{"d":"2017-02-13","t":"08:53","s":140,"di":114,"p":97,"n":null},{"d":"2017-02-20","t":"09:30","s":159,"di":106,"p":97,"n":null},{"d":"2017-02-21","t":null,"s":153,"di":102,"p":null,"n":30},{"d":"2017-02-22","t":"07:15","s":130,"di":72,"p":102,"n":31},{"d":"2017-02-22","t":"11:22","s":128,"di":78,"p":null,"n":32},{"d":"2017-04-05","t":"07:34","s":137,"di":97,"p":81,"n":null},{"d":"2017-04-10","t":"08:11","s":136,"di":88,"p":110,"n":null},{"d":"2017-04-13","t":"06:07","s":131,"di":73,"p":110,"n":null},{"d":"2017-04-18","t":"20:40","s":136,"di":89,"p":90,"n":null},{"d":"2017-04-19","t":"07:00","s":124,"di":83,"p":103,"n":null},{"d":"2017-04-20","t":"06:43","s":121,"di":78,"p":90,"n":null},{"d":"2017-04-22","t":"17:41","s":118,"di":78,"p":null,"n":33},{"d":"2017-04-24","t":"07:30","s":124,"di":62,"p":72,"n":null},{"d":"2017-05-01","t":"08:01","s":126,"di":76,"p":106,"n":null},{"d":"2017-05-03","t":"07:18","s":128,"di":92,"p":null,"n":null},{"d":"2017-05-04","t":"07:13","s":113,"di":65,"p":null,"n":null},{"d":"2017-05-05","t":"06:26","s":109,"di":62,"p":null,"n":null},{"d":"2017-06-15","t":"07:43","s":112,"di":78,"p":null,"n":null},{"d":"2017-06-26","t":"08:00","s":122,"di":76,"p":null,"n":null},{"d":"2017-07-13","t":"06:45","s":128,"di":84,"p":null,"n":null},{"d":"2017-07-14","t":"07:20","s":134,"di":95,"p":null,"n":null},{"d":"2017-07-27","t":"07:30","s":117,"di":88,"p":null,"n":null},{"d":"2017-08-09","t":"07:00","s":126,"di":86,"p":null,"n":null},{"d":"2018-02-08","t":"07:45","s":115,"di":96,"p":null,"n":null},{"d":"2018-06-25","t":"10:00","s":130,"di":98,"p":null,"n":34},{"d":"2018-06-27","t":"11:20","s":120,"di":90,"p":null,"n":34},{"d":"2018-07-03","t":"13:20","s":130,"di":92,"p":null,"n":35},{"d":"2018-07-05","t":"08:00","s":130,"di":100,"p":null,"n":36},{"d":"2018-07-09","t":"15:45","s":138,"di":95,"p":null,"n":37},{"d":"2018-08-23","t":"15:40","s":143,"di":99,"p":null,"n":38},{"d":"2018-08-24","t":"08:38","s":130,"di":90,"p":null,"n":39},{"d":"2018-08-24","t":"08:40","s":126,"di":72,"p":null,"n":39},{"d":"2018-08-24","t":"08:45","s":134,"di":78,"p":null,"n":39},{"d":"2018-08-24","t":"08:45","s":130,"di":100,"p":null,"n":39},{"d":"2018-08-24","t":"08:50","s":160,"di":86,"p":null,"n":40},{"d":"2018-08-24","t":"08:50","s":150,"di":82,"p":null,"n":41},{"d":"2018-08-24","t":"09:45","s":126,"di":84,"p":null,"n":39},{"d":"2018-08-24","t":"09:45","s":140,"di":80,"p":null,"n":42},{"d":"2018-08-24","t":"14:47","s":122,"di":80,"p":null,"n":39},{"d":"2018-08-24","t":"15:20","s":140,"di":80,"p":null,"n":39},{"d":"2018-08-24","t":"15:45","s":136,"di":80,"p":null,"n":43},{"d":"2018-08-24","t":"15:50","s":150,"di":98,"p":null,"n":39},{"d":"2018-08-28","t":"11:45","s":160,"di":100,"p":null,"n":44},{"d":"2018-08-30","t":"08:50","s":146,"di":100,"p":null,"n":45},{"d":"2018-09-04","t":"14:20","s":142,"di":84,"p":null,"n":46},{"d":"2018-09-07","t":null,"s":142,"di":92,"p":null,"n":47},{"d":"2018-09-12","t":null,"s":150,"di":74,"p":null,"n":48},{"d":"2018-09-14","t":null,"s":180,"di":90,"p":null,"n":49},{"d":"2018-09-19","t":null,"s":136,"di":76,"p":null,"n":null},{"d":"2018-09-21","t":null,"s":150,"di":88,"p":null,"n":null},{"d":"2018-09-26","t":null,"s":136,"di":80,"p":null,"n":null},{"d":"2018-09-28","t":null,"s":150,"di":78,"p":null,"n":null},{"d":"2018-10-02","t":null,"s":136,"di":80,"p":null,"n":50},{"d":"2018-10-05","t":null,"s":140,"di":84,"p":null,"n":null},{"d":"2018-10-10","t":null,"s":158,"di":98,"p":null,"n":null},{"d":"2018-10-12","t":null,"s":142,"di":84,"p":null,"n":null},{"d":"2018-10-14","t":null,"s":131,"di":90,"p":null,"n":51},{"d":"2018-10-17","t":null,"s":138,"di":86,"p":null,"n":null},{"d":"2018-10-19","t":null,"s":136,"di":80,"p":null,"n":null},{"d":"2018-10-23","t":null,"s":162,"di":110,"p":null,"n":null},{"d":"2018-10-26","t":null,"s":128,"di":89,"p":null,"n":51},{"d":"2018-10-26","t":null,"s":142,"di":88,"p":null,"n":null},{"d":"2018-10-30","t":null,"s":131,"di":92,"p":null,"n":51},{"d":"2018-10-30","t":null,"s":130,"di":82,"p":null,"n":null},{"d":"2018-11-06","t":null,"s":142,"di":88,"p":null,"n":null},{"d":"2018-11-13","t":null,"s":148,"di":100,"p":null,"n":null},{"d":"2018-11-16","t":null,"s":160,"di":98,"p":null,"n":null},{"d":"2018-11-19","t":null,"s":160,"di":104,"p":null,"n":null},{"d":"2018-11-21","t":null,"s":140,"di":82,"p":null,"n":null},{"d":"2018-11-27","t":null,"s":150,"di":86,"p":null,"n":null},{"d":"2018-12-04","t":null,"s":144,"di":90,"p":null,"n":null},{"d":"2018-12-11","t":null,"s":158,"di":96,"p":null,"n":null},{"d":"2018-12-12","t":null,"s":143,"di":91,"p":null,"n":null},{"d":"2019-01-03","t":null,"s":142,"di":84,"p":null,"n":null},{"d":"2019-01-09","t":"07:30","s":145,"di":96,"p":null,"n":52},{"d":"2019-01-10","t":"06:20","s":145,"di":96,"p":null,"n":53},{"d":"2019-01-11","t":"06:00","s":142,"di":90,"p":null,"n":54},{"d":"2019-01-15","t":"07:40","s":150,"di":104,"p":null,"n":55},{"d":"2019-01-16","t":"06:15","s":144,"di":104,"p":null,"n":56},{"d":"2019-01-17","t":"07:15","s":141,"di":94,"p":null,"n":57},{"d":"2019-01-17","t":"08:18","s":142,"di":88,"p":null,"n":58},{"d":"2019-01-18","t":"05:50","s":139,"di":88,"p":null,"n":59},{"d":"2019-01-19","t":"08:00","s":141,"di":93,"p":null,"n":60},{"d":"2019-01-21","t":"08:24","s":158,"di":90,"p":null,"n":61},{"d":"2019-01-22","t":"07:15","s":141,"di":90,"p":null,"n":62},{"d":"2019-01-23","t":null,"s":133,"di":79,"p":null,"n":63},{"d":"2019-01-24","t":null,"s":128,"di":74,"p":null,"n":64},{"d":"2019-01-25","t":null,"s":123,"di":70,"p":null,"n":65},{"d":"2019-01-30","t":null,"s":144,"di":103,"p":null,"n":null},{"d":"2019-01-30","t":null,"s":150,"di":84,"p":null,"n":66},{"d":"2019-01-31","t":null,"s":131,"di":84,"p":null,"n":null},{"d":"2019-02-01","t":null,"s":138,"di":98,"p":null,"n":null},{"d":"2019-02-02","t":null,"s":119,"di":72,"p":null,"n":null},{"d":"2019-02-08","t":null,"s":150,"di":102,"p":null,"n":null},{"d":"2019-02-14","t":null,"s":147,"di":100,"p":null,"n":null},{"d":"2019-02-21","t":null,"s":163,"di":108,"p":null,"n":null},{"d":"2019-02-25","t":null,"s":165,"di":110,"p":null,"n":null},{"d":"2019-02-26","t":null,"s":151,"di":101,"p":null,"n":null},{"d":"2019-02-27","t":null,"s":151,"di":98,"p":null,"n":67},{"d":"2019-02-27","t":null,"s":136,"di":92,"p":null,"n":67},{"d":"2019-02-28","t":null,"s":142,"di":96,"p":null,"n":null},{"d":"2019-03-02","t":null,"s":131,"di":81,"p":null,"n":null},{"d":"2019-03-05","t":null,"s":156,"di":104,"p":null,"n":null},{"d":"2019-03-06","t":null,"s":154,"di":102,"p":null,"n":null},{"d":"2019-03-07","t":null,"s":111,"di":67,"p":null,"n":null},{"d":"2019-03-18","t":null,"s":125,"di":88,"p":null,"n":null},{"d":"2019-03-19","t":null,"s":135,"di":75,"p":null,"n":null},{"d":"2019-03-20","t":null,"s":142,"di":80,"p":null,"n":null},{"d":"2019-03-21","t":null,"s":136,"di":86,"p":null,"n":null},{"d":"2019-03-22","t":null,"s":141,"di":83,"p":null,"n":null},{"d":"2019-03-23","t":null,"s":130,"di":77,"p":null,"n":null},{"d":"2019-03-24","t":null,"s":135,"di":76,"p":null,"n":68},{"d":"2019-03-26","t":null,"s":139,"di":98,"p":null,"n":null},{"d":"2019-03-27","t":null,"s":138,"di":96,"p":null,"n":null},{"d":"2019-03-28","t":null,"s":120,"di":75,"p":null,"n":null},{"d":"2019-04-03","t":null,"s":138,"di":90,"p":null,"n":null},{"d":"2019-04-04","t":null,"s":130,"di":80,"p":null,"n":null},{"d":"2019-04-04","t":null,"s":124,"di":76,"p":null,"n":69},{"d":"2019-04-05","t":null,"s":128,"di":77,"p":null,"n":null},{"d":"2019-04-06","t":null,"s":121,"di":64,"p":null,"n":null},{"d":"2019-04-09","t":null,"s":161,"di":107,"p":null,"n":null},{"d":"2019-04-17","t":null,"s":141,"di":104,"p":null,"n":null},{"d":"2019-04-18","t":null,"s":134,"di":97,"p":null,"n":null},{"d":"2019-04-18","t":null,"s":138,"di":78,"p":null,"n":69},{"d":"2019-04-25","t":null,"s":145,"di":100,"p":null,"n":null},{"d":"2019-04-26","t":null,"s":133,"di":84,"p":null,"n":null},{"d":"2019-04-30","t":null,"s":136,"di":90,"p":null,"n":null},{"d":"2019-05-02","t":null,"s":114,"di":71,"p":null,"n":67},{"d":"2019-05-02","t":null,"s":132,"di":87,"p":null,"n":67},{"d":"2019-05-07","t":null,"s":156,"di":94,"p":null,"n":67},{"d":"2019-05-07","t":null,"s":146,"di":88,"p":null,"n":67},{"d":"2019-05-08","t":null,"s":144,"di":91,"p":null,"n":null},{"d":"2019-05-09","t":null,"s":139,"di":83,"p":null,"n":null},{"d":"2019-05-10","t":null,"s":144,"di":100,"p":null,"n":null},{"d":"2019-05-14","t":null,"s":156,"di":112,"p":null,"n":null},{"d":"2019-05-15","t":null,"s":144,"di":97,"p":null,"n":null},{"d":"2019-05-16","t":null,"s":144,"di":94,"p":null,"n":null},{"d":"2019-05-17","t":null,"s":146,"di":94,"p":null,"n":null},{"d":"2019-05-20","t":null,"s":165,"di":93,"p":null,"n":null},{"d":"2019-05-21","t":null,"s":126,"di":74,"p":null,"n":null},{"d":"2019-05-26","t":null,"s":137,"di":91,"p":null,"n":null},{"d":"2019-05-29","t":null,"s":140,"di":87,"p":null,"n":null},{"d":"2019-05-30","t":null,"s":132,"di":90,"p":null,"n":null},{"d":"2019-05-31","t":null,"s":132,"di":86,"p":null,"n":null},{"d":"2019-06-01","t":null,"s":132,"di":85,"p":null,"n":null},{"d":"2019-06-03","t":null,"s":137,"di":89,"p":null,"n":null},{"d":"2019-06-04","t":null,"s":132,"di":83,"p":null,"n":null},{"d":"2019-06-05","t":null,"s":131,"di":86,"p":null,"n":null},{"d":"2019-06-06","t":null,"s":131,"di":84,"p":null,"n":67},{"d":"2019-06-06","t":null,"s":152,"di":96,"p":null,"n":67},{"d":"2019-06-07","t":null,"s":129,"di":87,"p":null,"n":null},{"d":"2019-06-08","t":null,"s":129,"di":91,"p":null,"n":null},{"d":"2019-06-09","t":null,"s":128,"di":77,"p":null,"n":null},{"d":"2019-06-10","t":null,"s":137,"di":76,"p":null,"n":null},{"d":"2019-06-11","t":null,"s":135,"di":88,"p":null,"n":null},{"d":"2019-06-13","t":null,"s":133,"di":87,"p":null,"n":null},{"d":"2019-06-14","t":null,"s":137,"di":93,"p":null,"n":null},{"d":"2019-06-15","t":null,"s":133,"di":78,"p":null,"n":null},{"d":"2019-06-16","t":null,"s":110,"di":65,"p":null,"n":70},{"d":"2019-06-17","t":null,"s":152,"di":103,"p":null,"n":null},{"d":"2019-06-19","t":null,"s":134,"di":78,"p":null,"n":null},{"d":"2019-06-20","t":null,"s":142,"di":92,"p":null,"n":null},{"d":"2019-06-21","t":null,"s":141,"di":96,"p":null,"n":null},{"d":"2019-06-22","t":null,"s":110,"di":64,"p":null,"n":71},{"d":"2019-06-23","t":null,"s":142,"di":86,"p":null,"n":null},{"d":"2019-06-24","t":null,"s":157,"di":93,"p":null,"n":null},{"d":"2019-06-25","t":null,"s":146,"di":89,"p":null,"n":null},{"d":"2019-06-27","t":null,"s":164,"di":96,"p":null,"n":72},{"d":"2019-06-28","t":null,"s":124,"di":71,"p":null,"n":null},{"d":"2019-07-03","t":null,"s":155,"di":96,"p":null,"n":null},{"d":"2019-07-05","t":null,"s":150,"di":99,"p":null,"n":null},{"d":"2019-07-06","t":null,"s":127,"di":70,"p":null,"n":null},{"d":"2019-07-09","t":null,"s":148,"di":97,"p":null,"n":null},{"d":"2019-07-10","t":null,"s":114,"di":71,"p":null,"n":73},{"d":"2019-07-11","t":null,"s":118,"di":77,"p":null,"n":null},{"d":"2019-07-12","t":null,"s":134,"di":74,"p":null,"n":null},{"d":"2019-07-18","t":null,"s":161,"di":94,"p":null,"n":null},{"d":"2019-07-24","t":null,"s":137,"di":99,"p":null,"n":null},{"d":"2019-07-25","t":null,"s":140,"di":87,"p":null,"n":null},{"d":"2019-08-01","t":null,"s":126,"di":70,"p":null,"n":74},{"d":"2019-08-02","t":null,"s":121,"di":70,"p":null,"n":null},{"d":"2019-08-07","t":null,"s":147,"di":86,"p":null,"n":null},{"d":"2019-08-08","t":null,"s":133,"di":84,"p":null,"n":null},{"d":"2019-08-09","t":null,"s":139,"di":88,"p":null,"n":null},{"d":"2019-08-10","t":null,"s":135,"di":88,"p":null,"n":null},{"d":"2019-08-11","t":null,"s":132,"di":73,"p":null,"n":null},{"d":"2019-08-13","t":null,"s":130,"di":86,"p":null,"n":null},{"d":"2019-08-14","t":null,"s":120,"di":69,"p":null,"n":null},{"d":"2019-08-15","t":null,"s":117,"di":72,"p":null,"n":null},{"d":"2019-08-19","t":null,"s":142,"di":84,"p":null,"n":null},{"d":"2019-08-20","t":null,"s":134,"di":80,"p":null,"n":null},{"d":"2019-08-21","t":null,"s":135,"di":77,"p":null,"n":null},{"d":"2019-08-22","t":null,"s":128,"di":79,"p":null,"n":null},{"d":"2019-08-23","t":null,"s":112,"di":65,"p":null,"n":null},{"d":"2019-08-26","t":null,"s":143,"di":84,"p":null,"n":null},{"d":"2019-08-28","t":null,"s":135,"di":79,"p":null,"n":null},{"d":"2019-08-29","t":null,"s":133,"di":82,"p":null,"n":null},{"d":"2019-09-03","t":null,"s":139,"di":76,"p":null,"n":null},{"d":"2019-09-04","t":null,"s":135,"di":79,"p":null,"n":null},{"d":"2019-09-05","t":null,"s":114,"di":73,"p":null,"n":null},{"d":"2019-09-17","t":null,"s":141,"di":90,"p":null,"n":null},{"d":"2019-09-18","t":null,"s":138,"di":91,"p":null,"n":null},{"d":"2019-10-03","t":null,"s":136,"di":76,"p":null,"n":75},{"d":"2019-10-03","t":"09:04","s":138,"di":89,"p":87,"n":76},{"d":"2019-10-29","t":null,"s":130,"di":77,"p":null,"n":null},{"d":"2019-10-30","t":null,"s":137,"di":91,"p":null,"n":null},{"d":"2019-11-07","t":null,"s":135,"di":86,"p":null,"n":null},{"d":"2019-11-11","t":null,"s":131,"di":80,"p":null,"n":null},{"d":"2019-11-12","t":null,"s":134,"di":83,"p":null,"n":null},{"d":"2019-11-13","t":null,"s":136,"di":82,"p":null,"n":null},{"d":"2019-11-14","t":null,"s":130,"di":81,"p":null,"n":null},{"d":"2019-11-21","t":null,"s":136,"di":83,"p":null,"n":null},{"d":"2019-11-22","t":null,"s":142,"di":84,"p":null,"n":72},{"d":"2019-11-23","t":null,"s":129,"di":80,"p":null,"n":null},{"d":"2019-11-25","t":null,"s":140,"di":87,"p":null,"n":null},{"d":"2019-11-26","t":null,"s":110,"di":60,"p":null,"n":null},{"d":"2019-11-27","t":null,"s":136,"di":76,"p":null,"n":null},{"d":"2019-12-04","t":null,"s":135,"di":88,"p":null,"n":null},{"d":"2019-12-06","t":null,"s":142,"di":82,"p":null,"n":null},{"d":"2019-12-17","t":null,"s":126,"di":74,"p":null,"n":null},{"d":"2019-12-20","t":null,"s":126,"di":80,"p":null,"n":null},{"d":"2019-12-29","t":null,"s":142,"di":80,"p":null,"n":null},{"d":"2019-12-30","t":null,"s":147,"di":88,"p":null,"n":null},{"d":"2020-01-15","t":null,"s":114,"di":79,"p":null,"n":null},{"d":"2020-01-16","t":null,"s":150,"di":88,"p":null,"n":null},{"d":"2020-01-19","t":null,"s":128,"di":66,"p":null,"n":null},{"d":"2020-01-20","t":null,"s":143,"di":86,"p":null,"n":null},{"d":"2020-01-21","t":null,"s":152,"di":94,"p":null,"n":null},{"d":"2020-01-24","t":null,"s":131,"di":89,"p":null,"n":null},{"d":"2020-01-28","t":null,"s":129,"di":81,"p":null,"n":null},{"d":"2020-01-29","t":null,"s":121,"di":71,"p":null,"n":null},{"d":"2020-01-30","t":null,"s":134,"di":77,"p":null,"n":null},{"d":"2020-03-03","t":null,"s":143,"di":87,"p":null,"n":null},{"d":"2020-03-04","t":null,"s":127,"di":84,"p":null,"n":null},{"d":"2020-03-05","t":null,"s":132,"di":81,"p":null,"n":null},{"d":"2020-03-06","t":null,"s":112,"di":80,"p":null,"n":77},{"d":"2020-03-09","t":null,"s":130,"di":82,"p":null,"n":null},{"d":"2020-03-10","t":null,"s":137,"di":79,"p":null,"n":null},{"d":"2020-03-11","t":null,"s":142,"di":105,"p":null,"n":78},{"d":"2020-03-15","t":null,"s":116,"di":69,"p":null,"n":79},{"d":"2020-03-19","t":null,"s":129,"di":88,"p":null,"n":null},{"d":"2020-03-20","t":null,"s":120,"di":74,"p":null,"n":null},{"d":"2020-03-20","t":null,"s":107,"di":63,"p":null,"n":80},{"d":"2020-03-22","t":null,"s":134,"di":89,"p":null,"n":81},{"d":"2020-03-24","t":null,"s":138,"di":101,"p":null,"n":82},{"d":"2020-03-25","t":null,"s":157,"di":110,"p":null,"n":83},{"d":"2020-03-26","t":null,"s":146,"di":101,"p":null,"n":null},{"d":"2020-03-28","t":null,"s":118,"di":73,"p":null,"n":null},{"d":"2020-03-30","t":null,"s":130,"di":87,"p":null,"n":null},{"d":"2020-03-31","t":null,"s":136,"di":95,"p":null,"n":null},{"d":"2020-04-02","t":null,"s":146,"di":88,"p":null,"n":null},{"d":"2020-04-03","t":null,"s":159,"di":111,"p":null,"n":null},{"d":"2020-04-04","t":null,"s":128,"di":76,"p":null,"n":84},{"d":"2020-04-05","t":null,"s":118,"di":74,"p":null,"n":null},{"d":"2020-04-06","t":null,"s":153,"di":90,"p":null,"n":85},{"d":"2020-04-07","t":null,"s":167,"di":109,"p":null,"n":null},{"d":"2020-04-08","t":null,"s":138,"di":91,"p":null,"n":86},{"d":"2020-04-09","t":null,"s":159,"di":107,"p":null,"n":null},{"d":"2020-04-13","t":null,"s":134,"di":79,"p":null,"n":87},{"d":"2020-04-14","t":null,"s":132,"di":84,"p":null,"n":null},{"d":"2020-04-20","t":null,"s":108,"di":57,"p":null,"n":null},{"d":"2020-04-21","t":null,"s":129,"di":56,"p":null,"n":null},{"d":"2020-04-23","t":null,"s":133,"di":87,"p":null,"n":null},{"d":"2020-04-24","t":null,"s":145,"di":91,"p":null,"n":null},{"d":"2020-04-29","t":null,"s":139,"di":91,"p":null,"n":null},{"d":"2020-05-15","t":null,"s":124,"di":79,"p":null,"n":null},{"d":"2020-06-03","t":null,"s":137,"di":82,"p":null,"n":null},{"d":"2020-06-17","t":null,"s":130,"di":86,"p":null,"n":null},{"d":"2020-06-18","t":null,"s":125,"di":79,"p":null,"n":null},{"d":"2020-06-23","t":null,"s":131,"di":81,"p":null,"n":null},{"d":"2020-08-03","t":null,"s":127,"di":85,"p":null,"n":null},{"d":"2020-10-02","t":null,"s":138,"di":80,"p":null,"n":null},{"d":"2020-11-01","t":null,"s":128,"di":93,"p":null,"n":null},{"d":"2020-11-12","t":null,"s":127,"di":79,"p":null,"n":null},{"d":"2020-11-18","t":null,"s":136,"di":88,"p":null,"n":null},{"d":"2020-12-11","t":null,"s":140,"di":92,"p":null,"n":null},{"d":"2020-12-12","t":null,"s":140,"di":94,"p":null,"n":null},{"d":"2020-12-14","t":null,"s":142,"di":88,"p":null,"n":null},{"d":"2020-12-24","t":null,"s":137,"di":89,"p":null,"n":null},{"d":"2020-12-31","t":null,"s":135,"di":83,"p":null,"n":null},{"d":"2021-01-04","t":null,"s":120,"di":84,"p":null,"n":null},{"d":"2021-01-05","t":null,"s":138,"di":88,"p":null,"n":null},{"d":"2021-01-07","t":null,"s":128,"di":76,"p":null,"n":null},{"d":"2021-01-08","t":null,"s":125,"di":86,"p":null,"n":null},{"d":"2021-01-11","t":null,"s":128,"di":79,"p":null,"n":null},{"d":"2021-01-13","t":null,"s":108,"di":76,"p":null,"n":null},{"d":"2021-01-14","t":null,"s":127,"di":78,"p":null,"n":null},{"d":"2021-01-15","t":null,"s":127,"di":84,"p":null,"n":null},{"d":"2021-01-25","t":null,"s":122,"di":93,"p":null,"n":null},{"d":"2021-01-26","t":null,"s":128,"di":97,"p":null,"n":null},{"d":"2021-02-02","t":null,"s":129,"di":87,"p":null,"n":null},{"d":"2021-02-11","t":null,"s":127,"di":79,"p":null,"n":null},{"d":"2021-02-19","t":null,"s":180,"di":80,"p":null,"n":88},{"d":"2021-02-19","t":null,"s":135,"di":82,"p":null,"n":89},{"d":"2021-02-24","t":null,"s":130,"di":84,"p":null,"n":67},{"d":"2021-02-26","t":null,"s":136,"di":86,"p":null,"n":67},{"d":"2021-03-02","t":null,"s":128,"di":80,"p":null,"n":null},{"d":"2021-03-02","t":null,"s":138,"di":80,"p":null,"n":69},{"d":"2021-03-04","t":null,"s":128,"di":78,"p":null,"n":null},{"d":"2021-03-08","t":null,"s":132,"di":90,"p":null,"n":null},{"d":"2021-03-11","t":null,"s":136,"di":92,"p":null,"n":null},{"d":"2021-03-18","t":null,"s":132,"di":92,"p":null,"n":null},{"d":"2021-03-31","t":null,"s":137,"di":78,"p":null,"n":null},{"d":"2021-04-09","t":null,"s":128,"di":80,"p":null,"n":null},{"d":"2021-04-14","t":null,"s":135,"di":79,"p":null,"n":null},{"d":"2021-04-15","t":null,"s":126,"di":88,"p":null,"n":null},{"d":"2021-04-18","t":null,"s":125,"di":70,"p":null,"n":null},{"d":"2021-04-21","t":null,"s":124,"di":76,"p":null,"n":null},{"d":"2021-04-23","t":null,"s":132,"di":84,"p":null,"n":null},{"d":"2021-04-24","t":null,"s":128,"di":65,"p":null,"n":null},{"d":"2021-04-25","t":null,"s":132,"di":76,"p":null,"n":null},{"d":"2021-04-27","t":null,"s":126,"di":78,"p":null,"n":null},{"d":"2021-04-29","t":null,"s":128,"di":84,"p":null,"n":null},{"d":"2021-05-03","t":null,"s":138,"di":86,"p":null,"n":null},{"d":"2021-05-13","t":null,"s":132,"di":86,"p":null,"n":null},{"d":"2021-05-17","t":null,"s":138,"di":92,"p":null,"n":null},{"d":"2021-05-19","t":null,"s":136,"di":88,"p":null,"n":null},{"d":"2021-05-22","t":null,"s":129,"di":81,"p":null,"n":null},{"d":"2021-05-25","t":null,"s":130,"di":86,"p":null,"n":null},{"d":"2021-06-02","t":null,"s":132,"di":78,"p":null,"n":null},{"d":"2021-06-04","t":null,"s":135,"di":95,"p":null,"n":null},{"d":"2021-06-10","t":null,"s":128,"di":78,"p":null,"n":null},{"d":"2021-06-16","t":null,"s":132,"di":80,"p":null,"n":null},{"d":"2021-06-18","t":null,"s":129,"di":79,"p":null,"n":null},{"d":"2021-07-09","t":null,"s":137,"di":70,"p":null,"n":null},{"d":"2021-07-14","t":null,"s":136,"di":76,"p":null,"n":null},{"d":"2021-07-16","t":null,"s":130,"di":92,"p":null,"n":null},{"d":"2021-07-19","t":null,"s":132,"di":72,"p":null,"n":null},{"d":"2021-07-30","t":null,"s":142,"di":96,"p":null,"n":null},{"d":"2021-08-04","t":null,"s":142,"di":98,"p":null,"n":null},{"d":"2021-08-11","t":null,"s":131,"di":93,"p":null,"n":null},{"d":"2021-08-12","t":null,"s":145,"di":88,"p":null,"n":null},{"d":"2021-08-17","t":null,"s":134,"di":87,"p":null,"n":null},{"d":"2021-08-18","t":null,"s":129,"di":96,"p":null,"n":null},{"d":"2021-08-23","t":null,"s":141,"di":94,"p":null,"n":null},{"d":"2021-08-26","t":null,"s":131,"di":85,"p":null,"n":null},{"d":"2021-09-14","t":null,"s":159,"di":100,"p":null,"n":null},{"d":"2021-09-15","t":null,"s":160,"di":99,"p":null,"n":null},{"d":"2021-09-16","t":null,"s":146,"di":101,"p":null,"n":90},{"d":"2021-09-17","t":null,"s":145,"di":95,"p":null,"n":null},{"d":"2021-09-18","t":null,"s":129,"di":88,"p":null,"n":91},{"d":"2021-09-20","t":null,"s":142,"di":88,"p":null,"n":null},{"d":"2021-09-22","t":null,"s":148,"di":103,"p":null,"n":null},{"d":"2021-09-23","t":null,"s":121,"di":79,"p":null,"n":null},{"d":"2021-10-02","t":null,"s":134,"di":69,"p":null,"n":92},{"d":"2021-10-07","t":null,"s":122,"di":86,"p":null,"n":null},{"d":"2021-11-03","t":null,"s":136,"di":92,"p":null,"n":null},{"d":"2021-11-18","t":null,"s":140,"di":98,"p":null,"n":null},{"d":"2021-12-18","t":null,"s":166,"di":102,"p":null,"n":null},{"d":"2021-12-29","t":null,"s":172,"di":112,"p":null,"n":null},{"d":"2022-01-18","t":null,"s":134,"di":88,"p":null,"n":null},{"d":"2022-01-19","t":null,"s":134,"di":83,"p":null,"n":null},{"d":"2022-02-25","t":null,"s":155,"di":105,"p":null,"n":null},{"d":"2022-03-02","t":null,"s":146,"di":99,"p":null,"n":null},{"d":"2022-03-28","t":null,"s":149,"di":98,"p":null,"n":null},{"d":"2022-04-05","t":null,"s":155,"di":100,"p":null,"n":null},{"d":"2022-04-13","t":null,"s":141,"di":101,"p":null,"n":null},{"d":"2022-05-03","t":null,"s":124,"di":87,"p":null,"n":null},{"d":"2022-05-12","t":null,"s":142,"di":92,"p":null,"n":null},{"d":"2022-05-25","t":null,"s":146,"di":95,"p":null,"n":null},{"d":"2022-05-31","t":null,"s":136,"di":87,"p":null,"n":null},{"d":"2022-08-02","t":null,"s":118,"di":79,"p":null,"n":null},{"d":"2022-08-06","t":null,"s":131,"di":77,"p":null,"n":null},{"d":"2022-08-10","t":null,"s":138,"di":93,"p":null,"n":null},{"d":"2022-09-21","t":null,"s":153,"di":109,"p":null,"n":93},{"d":"2022-10-12","t":null,"s":146,"di":90,"p":null,"n":null},{"d":"2022-10-27","t":null,"s":113,"di":70,"p":null,"n":null},{"d":"2022-11-20","t":null,"s":149,"di":87,"p":null,"n":null},{"d":"2022-12-19","t":null,"s":140,"di":91,"p":null,"n":null},{"d":"2022-12-30","t":null,"s":113,"di":75,"p":120,"n":94},{"d":"2024-05-24","t":null,"s":152,"di":93,"p":null,"n":null},{"d":"2024-06-12","t":null,"s":148,"di":100,"p":null,"n":null},{"d":"2024-06-14","t":null,"s":161,"di":100,"p":null,"n":95},{"d":"2024-06-16","t":null,"s":162,"di":101,"p":null,"n":null},{"d":"2024-06-17","t":null,"s":148,"di":98,"p":null,"n":null},{"d":"2024-06-19","t":null,"s":149,"di":104,"p":null,"n":null},{"d":"2024-06-20","t":null,"s":153,"di":102,"p":null,"n":null},{"d":"2024-06-25","t":null,"s":142,"di":80,"p":null,"n":null},{"d":"2024-06-26","t":null,"s":153,"di":98,"p":null,"n":null},{"d":"2024-06-27","t":null,"s":142,"di":106,"p":null,"n":null},{"d":"2024-07-02","t":null,"s":137,"di":90,"p":null,"n":null},{"d":"2024-07-04","t":null,"s":139,"di":89,"p":null,"n":null},{"d":"2024-07-29","t":null,"s":135,"di":83,"p":null,"n":null},{"d":"2024-07-30","t":null,"s":145,"di":87,"p":null,"n":null},{"d":"2024-08-02","t":null,"s":154,"di":97,"p":null,"n":null},{"d":"2024-08-03","t":null,"s":140,"di":84,"p":null,"n":null},{"d":"2024-08-04","t":null,"s":145,"di":87,"p":null,"n":null},{"d":"2024-08-05","t":null,"s":125,"di":83,"p":null,"n":96},{"d":"2024-08-06","t":null,"s":137,"di":76,"p":null,"n":null},{"d":"2024-08-11","t":null,"s":114,"di":63,"p":null,"n":97},{"d":"2024-08-12","t":null,"s":113,"di":64,"p":null,"n":98},{"d":"2024-08-13","t":null,"s":141,"di":87,"p":null,"n":null},{"d":"2024-08-15","t":null,"s":129,"di":68,"p":null,"n":null},{"d":"2024-08-25","t":null,"s":114,"di":64,"p":null,"n":null},{"d":"2024-09-03","t":null,"s":126,"di":86,"p":null,"n":null},{"d":"2024-09-08","t":null,"s":132,"di":98,"p":null,"n":99},{"d":"2024-09-09","t":null,"s":138,"di":90,"p":null,"n":null},{"d":"2024-09-10","t":null,"s":135,"di":80,"p":null,"n":100},{"d":"2024-09-15","t":null,"s":121,"di":76,"p":null,"n":null},{"d":"2024-09-29","t":null,"s":147,"di":85,"p":null,"n":null},{"d":"2024-11-29","t":null,"s":142,"di":96,"p":null,"n":null},{"d":"2024-11-30","t":null,"s":154,"di":107,"p":null,"n":101},{"d":"2024-12-02","t":null,"s":137,"di":94,"p":null,"n":null},{"d":"2024-12-05","t":null,"s":145,"di":88,"p":null,"n":null},{"d":"2024-12-06","t":null,"s":132,"di":92,"p":null,"n":null},{"d":"2024-12-11","t":null,"s":128,"di":79,"p":null,"n":102},{"d":"2024-12-13","t":null,"s":126,"di":94,"p":null,"n":null},{"d":"2024-12-15","t":null,"s":131,"di":79,"p":null,"n":103},{"d":"2024-12-16","t":null,"s":128,"di":89,"p":null,"n":null},{"d":"2024-12-17","t":null,"s":129,"di":89,"p":null,"n":null},{"d":"2024-12-18","t":null,"s":133,"di":93,"p":null,"n":104},{"d":"2024-12-19","t":null,"s":117,"di":80,"p":null,"n":105},{"d":"2024-12-24","t":null,"s":137,"di":93,"p":null,"n":null},{"d":"2025-01-06","t":null,"s":142,"di":98,"p":null,"n":106},{"d":"2025-01-07","t":null,"s":147,"di":99,"p":null,"n":107},{"d":"2025-01-08","t":null,"s":159,"di":111,"p":null,"n":108},{"d":"2025-01-09","t":null,"s":139,"di":91,"p":null,"n":109},{"d":"2025-01-15","t":null,"s":142,"di":96,"p":null,"n":null},{"d":"2025-01-16","t":null,"s":121,"di":73,"p":null,"n":110},{"d":"2025-01-20","t":null,"s":129,"di":68,"p":null,"n":null},{"d":"2025-01-21","t":null,"s":129,"di":72,"p":null,"n":null},{"d":"2025-01-22","t":null,"s":131,"di":74,"p":null,"n":null},{"d":"2025-01-23","t":null,"s":130,"di":77,"p":null,"n":null},{"d":"2025-01-24","t":null,"s":132,"di":73,"p":null,"n":null},{"d":"2025-01-25","t":null,"s":154,"di":96,"p":null,"n":null},{"d":"2025-01-28","t":null,"s":131,"di":68,"p":null,"n":null},{"d":"2025-01-30","t":null,"s":124,"di":74,"p":null,"n":null},{"d":"2025-08-26","t":null,"s":181,"di":110,"p":null,"n":111},{"d":"2025-09-05","t":"06:00","s":155,"di":100,"p":null,"n":null},{"d":"2025-09-05","t":"06:00","s":156,"di":98,"p":null,"n":112},{"d":"2025-09-05","t":"21:00","s":158,"di":96,"p":null,"n":null},{"d":"2025-09-09","t":"08:40","s":146,"di":90,"p":null,"n":113},{"d":"2025-09-09","t":"12:00","s":146,"di":92,"p":null,"n":114},{"d":"2025-09-10","t":null,"s":131,"di":84,"p":81,"n":115},{"d":"2025-09-11","t":"06:30","s":127,"di":81,"p":76,"n":null},{"d":"2025-09-12","t":"07:00","s":128,"di":84,"p":78,"n":null},{"d":"2025-09-14","t":"10:50","s":131,"di":83,"p":78,"n":null},{"d":"2025-09-15","t":"06:00","s":121,"di":87,"p":71,"n":null},{"d":"2025-09-16","t":"06:00","s":129,"di":83,"p":72,"n":null},{"d":"2025-09-17","t":"06:00","s":129,"di":77,"p":69,"n":null},{"d":"2025-09-18","t":"06:00","s":129,"di":77,"p":74,"n":null},{"d":"2025-09-19","t":null,"s":127,"di":80,"p":68,"n":null},{"d":"2025-09-24","t":"06:00","s":135,"di":93,"p":71,"n":116},{"d":"2025-09-25","t":"06:00","s":126,"di":86,"p":73,"n":117},{"d":"2025-10-10","t":"06:45","s":129,"di":83,"p":81,"n":118},{"d":"2025-10-15","t":"06:00","s":121,"di":83,"p":73,"n":119},{"d":"2025-10-16","t":"06:00","s":122,"di":79,"p":68,"n":null},{"d":"2025-10-17","t":"07:15","s":138,"di":87,"p":73,"n":null},{"d":"2025-10-31","t":"07:00","s":127,"di":78,"p":80,"n":null},{"d":"2025-11-01","t":"08:00","s":132,"di":82,"p":76,"n":null},{"d":"2025-11-03","t":"06:00","s":137,"di":90,"p":73,"n":null},{"d":"2025-11-04","t":"06:15","s":137,"di":93,"p":76,"n":120},{"d":"2025-11-05","t":"06:20","s":130,"di":83,"p":71,"n":null},{"d":"2025-11-07","t":null,"s":120,"di":75,"p":75,"n":null},{"d":"2025-11-10","t":"07:45","s":124,"di":77,"p":66,"n":null},{"d":"2025-11-11","t":"06:30","s":121,"di":76,"p":72,"n":null},{"d":"2025-11-14","t":"06:30","s":120,"di":77,"p":71,"n":null},{"d":"2025-11-20","t":"06:30","s":125,"di":77,"p":69,"n":121},{"d":"2026-01-05","t":null,"s":115,"di":90,"p":69,"n":null},{"d":"2026-01-07","t":null,"s":125,"di":88,"p":68,"n":null},{"d":"2026-01-08","t":null,"s":128,"di":85,"p":70,"n":null},{"d":"2026-01-09","t":null,"s":123,"di":83,"p":67,"n":null},{"d":"2026-01-16","t":null,"s":124,"di":73,"p":68,"n":122},{"d":"2026-01-30","t":null,"s":113,"di":74,"p":71,"n":123},{"d":"2026-02-07","t":null,"s":126,"di":82,"p":70,"n":124},{"d":"2026-07-07","t":null,"s":145,"di":87,"p":74,"n":125},{"d":"2026-07-07","t":null,"s":128,"di":93,"p":78,"n":125},{"d":"2026-07-07","t":null,"s":136,"di":93,"p":70,"n":125},{"d":"2026-08-20","t":null,"s":157,"di":96,"p":71,"n":126},{"d":"2026-09-19","t":null,"s":149,"di":107,"p":80,"n":127},{"d":"2026-09-21","t":null,"s":145,"di":101,"p":89,"n":128},{"d":"2026-09-23","t":null,"s":143,"di":94,"p":79,"n":129},{"d":"2026-09-25","t":null,"s":137,"di":93,"p":73,"n":130},{"d":"2026-09-28","t":null,"s":133,"di":79,"p":87,"n":131},{"d":"2026-09-30","t":null,"s":139,"di":91,"p":71,"n":132},{"d":"2026-10-01","t":"12:42","s":145,"di":91,"p":75,"n":133},{"d":"2026-10-03","t":"09:07","s":135,"di":91,"p":74,"n":134},{"d":"2026-10-03","t":"09:06","s":132,"di":93,"p":75,"n":135},{"d":"2026-10-03","t":"09:06","s":138,"di":93,"p":73,"n":136},{"d":"2026-10-05","t":"08:49","s":155,"di":96,"p":77,"n":137},{"d":"2026-10-05","t":"08:50","s":142,"di":94,"p":78,"n":138},{"d":"2026-10-05","t":null,"s":149,"di":97,"p":78,"n":139},{"d":"2026-10-06","t":"07:13","s":142,"di":80,"p":80,"n":134},{"d":"2026-10-06","t":"07:12","s":140,"di":86,"p":83,"n":135},{"d":"2026-10-06","t":"07:10","s":145,"di":84,"p":85,"n":136},{"d":"2026-10-07","t":"09:44","s":144,"di":91,"p":81,"n":140},{"d":"2026-10-07","t":"09:43","s":144,"di":89,"p":78,"n":141},{"d":"2026-10-07","t":"09:43","s":157,"di":81,"p":84,"n":142},{"d":"2026-10-08","t":"07:53","s":136,"di":95,"p":89,"n":143},{"d":"2026-10-08","t":"07:54","s":131,"di":88,"p":89,"n":144},{"d":"2026-10-08","t":"07:55","s":138,"di":87,"p":90,"n":145},{"d":"2026-10-20","t":"07:34","s":135,"di":88,"p":86,"n":134},{"d":"2026-10-20","t":"07:35","s":134,"di":85,"p":84,"n":135},{"d":"2026-10-20","t":"07:36","s":139,"di":87,"p":89,"n":136},{"d":"2026-10-21","t":"12:47","s":144,"di":87,"p":85,"n":146},{"d":"2026-10-21","t":"12:48","s":135,"di":80,"p":87,"n":147},{"d":"2026-10-21","t":"12:49","s":139,"di":94,"p":86,"n":148}];
+</script>
+<script>
+(function () {
+  "use strict";
+  /* ---------- helpers ---------- */
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  }[c]));
+  const round1 = (x) => Math.round(x * 10) / 10;
+  const median = (a) => { if (!a.length) return null; const b = a.slice().sort((x, y) => x - y); const m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; };
+  const mean = (a) => (a.length ? a.reduce((s, x) => s + x, 0) / a.length : null);
+  const fmtD = (dstr) => { const [y, m, d] = dstr.split("-").map(Number); return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); };
+  const fmtDs = (dstr) => { const [y, m, d] = dstr.split("-").map(Number); return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric" }); };
+  const msOf = (dstr) => Date.parse(dstr + "T12:00:00");
+  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  /* ---------- data prep: tags & sentiment ---------- */
+  const THEME_LABEL = { sleep: "Sleep", exercise: "Exercise", meds: "Meds", stress: "Stress", alcohol: "Alcohol", clinic: "Doctor", food: "Food", illness: "Illness" };
+  const RX = {
+    sleep: /(didn'?t sleep|haven'?t been sleeping|not sleeping|\bsleep\b|lying down|was falling asleep|bedtime|hours? of sleep|5 hours|\btired\b)/i,
+    exercise: /(before workout|after workout|post workout|after exercise|\bworkout\b|crossfit|after gym|spin class|\bspin\b|mile run|after\s+a?\s*run\b|half[\s-]?marathon|\bragnar\b|step treadmill|weights?\b|lifting|hiking|yard work)/i,
+    meds: /(lisinopril|losartan|valsart\w*|diltiazem|amlodipine|hctz|depakote|depikote|beet powder|acutane|ashwaghanda|micro\s?dos|phenobarbital|\bmeds?\b|medication|medicine\b|\bpill\b|\bdose\b|\bpill\b)/i,
+    medchange: /(took first|started|stopped|put on|forgot|didn'?t take|hadn'?t taken|haven'?t taken|still (haven'?t taken|not taking)|double|increased dose|took second|then took|come back in a month|first day)/i,
+    stress: /(stress|anxiety|anxious|panic|fight with|interview|nervous|depress)/i,
+    alcohol: /(\bbeer\b|\bwhisk(e|s)y\b|lots? of drinks?|\bdrank\b|shots? of|sours?|cold brew fashioned|shenanigans|alcohol)/i,
+    clinic: /(marathon health|marathon clinic|@ ?marathon|taken at marathon|allergy|appointment|neurologist|urgent care|hospital\b|arup|sugarhouse|madsen|dr\.?\s+\w+|doctor)/i,
+    food: /(ribs|beef|tacos|\bpho\b|ice cream|chicken|lemon chicken|rice|potato|vegan dinners|mashed)/i,
+    illness: /(\bsick\b|\bflu\b|dizzy|migraine|kidney area pain|withdraw|tonsil|cramp)/i,
+  };
+  const NEG = /(didn'?t sleep|haven'?t been sleeping|not sleeping|didn't sleep|stressy|stressed|anxiety|depress|dizzy|panic|fight|nervous|withdraw|sick|flu|migraine|pain|don'?t like how high|really tired|not in great|anxiety than usual|shenanigans)/i;
+  const POS = /(feel good|really good|good this morning|\bmeditat|mindful|\bcalm\b|slept pretty|slept better|feeling better|generally feeling better|well\b)/i;
+
+  BP_ROWS.forEach((r, i) => {
+    r.i = i; r.ms = msOf(r.d);
+    r.tags = []; r.note = r.n == null ? null : BP_NOTES[r.n];
+    if (r.note) {
+      const n = r.note;
+      if (RX.sleep.test(n)) r.tags.push("sleep");
+      if (RX.exercise.test(n)) r.tags.push("exercise");
+      if (RX.meds.test(n)) r.tags.push("meds");
+      if (RX.stress.test(n)) r.tags.push("stress");
+      if (RX.alcohol.test(n)) r.tags.push("alcohol");
+      if (RX.clinic.test(n)) r.tags.push("clinic");
+      if (RX.food.test(n)) r.tags.push("food");
+      if (RX.illness.test(n)) r.tags.push("illness");
+      r.medchange = RX.meds.test(n) && RX.medchange.test(n);
+      r.sent = NEG.test(n) ? "neg" : (POS.test(n) ? "pos" : "neu");
+    } else { r.medchange = false; r.sent = null; }
+  });
+
+  const MIN_D = BP_ROWS[0].d, MAX_D = BP_ROWS[BP_ROWS.length - 1].d;
+  const isDark = () => matchMedia("(prefers-color-scheme: dark)").matches;
+  const defaultFromDate = new Date(msOf(MAX_D) - 30 * 864e5);
+  const DEFAULT_FROM = defaultFromDate.getFullYear() + "-" + String(defaultFromDate.getMonth() + 1).padStart(2, "0") + "-" + String(defaultFromDate.getDate()).padStart(2, "0");
+
+  /* ---------- state ---------- */
+  const state = {
+    from: DEFAULT_FROM, to: MAX_D, theme: "all",
+    showSys: true, showDia: true, showPulse: false, showTrend: true,
+    hl: null,  // pinned row index
+  };
+
+  const rowsInRange = (from, to, theme) => BP_ROWS.filter((r) =>
+    r.d >= from && r.d <= to && (theme === "all" || r.tags.indexOf(theme) >= 0));
+
+  const rangeLabel = () => {
+    if (state.from === MIN_D && state.to === MAX_D) return "All time";
+    return fmtDs(state.from) + " – " + fmtDs(state.to);
+  };
+
+  /* ---------- stats engine ---------- */
+  function statsFor(rows) {
+    const n = rows.length;
+    if (!n) return { n: 0 };
+    const s = rows.map((r) => r.s), d = rows.map((r) => r.di);
+    const medS = median(s), medD = median(d), avgS = mean(s), avgD = mean(d);
+    const hi = rows.filter((r) => r.s >= 140 || r.di >= 90).length;
+    let loR = rows[0], hiR = rows[0];
+    rows.forEach((r) => { if (r.s < loR.s) loR = r; if (r.s > hiR.s) hiR = r; });
+    const pu = rows.map((r) => r.p).filter((x) => x != null);
+    // trend: OLS on sys vs time
+    let slopeY = null;
+    if (n >= 3) {
+      const xs = rows.map((r) => r.ms), ys = s;
+      const mx = mean(xs), my = mean(ys);
+      let num = 0, den = 0;
+      for (let k = 0; k < n; k++) { num += (xs[k] - mx) * (ys[k] - my); den += (xs[k] - mx) * (xs[k] - mx); }
+      slopeY = den ? (num / den) * 365 * 864e5 : null; // mmHg per year
+    }
+    return { n, medS, medD, avgS, avgD, hi, hiPct: (100 * hi) / n, loR, hiR, pu,
+             slopeY, from: rows[0].d, to: rows[n - 1].d,
+             notes: rows.filter((r) => r.note).length };
+  }
+
+  function trendText(slopeY, n) {
+    if (slopeY == null || n < 3) return { t: "Not enough data", cls: "" };
+    if (Math.abs(slopeY) < 1) return { t: "Holding steady", cls: "ok" };
+    return slopeY > 0
+      ? { t: "Rising · +" + round1(slopeY) + "/yr", cls: "up" }
+      : { t: "Falling · " + round1(slopeY) + "/yr", cls: "ok" };
+  }
+
+  /* ---------- main chart ---------- */
+  const svgNS = "http://www.w3.org/2000/svg";
+  const mk = (t, attrs, parent) => { const e = document.createElementNS(svgNS, t); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+
+  let chartGeom = null; // for hover
+  function renderChart() {
+    const rows = rowsInRange(state.from, state.to, state.theme)
+      .filter(() => true).sort((a, b) => (a.ms - b.ms) || (a.t || "").localeCompare(b.t || "") || (a.i - b.i));
+    const wrap = $("#chartWrap"), svg = $("#chart"), tip = $("#chartTip");
+    const W = Math.max(300, wrap.clientWidth), H = W < 560 ? 300 : 360;
+    const L = 46, R = state.showPulse ? 48 : 16, T = 12, B = 34;
+    const pw = W - L - R, ph = H - T - B;
+    svg.setAttribute("width", W); svg.setAttribute("height", H);
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    svg.innerHTML = "";
+    tip.style.display = "none";
+    chartGeom = null;
+
+    const emptyMsg = !state.showSys && !state.showDia && !state.showPulse
+      ? "Turn on at least one series to draw the chart."
+      : rows.length === 0 ? "No readings in this range" + (state.theme !== "all" ? " for " + THEME_LABEL[state.theme] : "") + "." : null;
+    if (emptyMsg) {
+      const t = mk("text", { x: W / 2, y: H / 2, "text-anchor": "middle", fill: "var(--ink-3)", "font-size": 14 }, svg);
+      t.textContent = emptyMsg;
+      $("#chartSub").textContent = "";
+      updatePinned();
+      return;
+    }
+
+    chartGeom = {};
+    const dark = isDark();
+    const C = {
+      sys: dark ? "#f0665a" : "#d6493b",
+      dia: dark ? "#5b9cf6" : "#2a6fd6",
+      pulse: dark ? "#e8a33d" : "#c4760f",
+      grid: dark ? "#232b34" : "#e9e4da",
+      text: dark ? "#8f98a3" : "#8a928f",
+      mark: dark ? "#e9ebee" : "#20242a",
+      med: dark ? "#f0665a" : "#b3402e",
+      trend: dark ? "#7c868f" : "#98a0a8",
+    };
+
+    const lo = rows[0].ms, hi0 = rows[rows.length - 1].ms;
+    const pad = Math.max(864e5 * 2, (hi0 - lo) * 0.02);
+    const x0 = lo - pad, x1 = hi0 + pad;
+    const X = (ms) => L + ((ms - x0) / (x1 - x0)) * pw;
+
+    let vals = [];
+    if (state.showSys) vals = vals.concat(rows.map((r) => r.s));
+    if (state.showDia) vals = vals.concat(rows.map((r) => r.di));
+    const pu = rows.filter((r) => r.p != null && state.showPulse).map((r) => r.p);
+    const mainVals = vals;
+    let ymin = Math.floor((Math.min.apply(null, mainVals) - 6) / 5) * 5;
+    let ymax = Math.ceil((Math.max.apply(null, mainVals) + 6) / 5) * 5;
+    const Y = (v) => T + (1 - (v - ymin) / (ymax - ymin)) * ph;
+
+    let pymin, pymax, YP = null;
+    if (state.showPulse && pu.length) {
+      pymin = Math.floor((Math.min.apply(null, pu) - 8) / 10) * 10;
+      pymax = Math.ceil((Math.max.apply(null, pu) + 8) / 10) * 10;
+      YP = (v) => T + (1 - (v - pymin) / (pymax - pymin)) * ph;
+    }
+
+    // background bands: above 140 and below 120 handled by ref lines only; faint band for the diabetic-ok zone? keep minimal
+    // grid + y axis
+    const step = Math.max(10, Math.round((ymax - ymin) / 5 / 10) * 10);
+    for (let v = Math.ceil(ymin / step) * step; v <= ymax; v += step) {
+      mk("line", { x1: L, y1: Y(v), x2: W - R, y2: Y(v), stroke: C.grid, "stroke-width": 1 }, svg);
+      const t = mk("text", { x: L - 7, y: Y(v) + 4, "text-anchor": "end", "font-size": 10.5, fill: C.text }, svg);
+      t.textContent = v;
+    }
+    if (YP) {
+      const pstep = Math.max(10, Math.round((pymax - pymin) / 4 / 10) * 10);
+      for (let v = Math.ceil(pymin / pstep) * pstep; v <= pymax; v += pstep) {
+        const t = mk("text", { x: W - R + 7, y: YP(v) + 4, "text-anchor": "start", "font-size": 10.5, fill: C.pulse }, svg);
+        t.textContent = v;
+      }
+      const pl = mk("text", { x: W - R, y: T - 2, "text-anchor": "end", "font-size": 10.5, fill: C.pulse }, svg);
+      pl.textContent = "pulse";
+    }
+
+    // x ticks
+    const spanDays = (x1 - x0) / 864e5;
+    const tickCount = W < 560 ? 4 : 7;
+    let tickMs; const DAY = 864e5;
+    if (spanDays > 730) tickMs = 365 * DAY; else if (spanDays > 180) tickMs = 90 * DAY;
+    else if (spanDays > 60) tickMs = 30 * DAY; else if (spanDays > 16) tickMs = 7 * DAY;
+    else if (spanDays > 4) tickMs = 2 * DAY; else tickMs = DAY;
+    const first = Math.ceil(x0 / tickMs) * tickMs;
+    for (let t = first; t <= x1; t += tickMs) {
+      const dt = new Date(t);
+      const lbl = spanDays > 730 ? String(dt.getFullYear())
+        : (tickMs >= 30 * DAY ? MONTHS[dt.getMonth()] + " " + dt.getFullYear()
+        : MONTHS[dt.getMonth()] + " " + dt.getDate());
+      const tx = mk("text", { x: X(t), y: H - 12, "text-anchor": "middle", "font-size": 10.5, fill: C.text }, svg);
+      tx.textContent = lbl;
+      mk("line", { x1: X(t), y1: T + ph, x2: X(t), y2: T + ph + 4, stroke: C.grid }, svg);
+    }
+
+    // reference lines: 140 / 90 (flag), 120 / 80 (guideline)
+    const refs = [
+      { v: 140, label: "140", strong: true }, { v: 120, label: "120", strong: false },
+      { v: 90, label: "90", strong: true }, { v: 80, label: "80", strong: false },
+    ];
+    refs.forEach((r) => {
+      if (r.v < ymin || r.v > ymax) return;
+      mk("line", { x1: L, y1: Y(r.v), x2: W - R, y2: Y(r.v), stroke: r.strong ? C.mark : C.grid,
+        "stroke-width": r.strong ? 1 : 1, "stroke-dasharray": r.strong ? "5,4" : "2,3", opacity: r.strong ? 0.55 : 0.9 }, svg);
+      const t = mk("text", { x: L + 3, y: Y(r.v) - 4, "font-size": 10, fill: C.text }, svg);
+      t.textContent = r.label;
+    });
+
+    // segments with gaps for missing data
+    const breakGap = Math.max(14, spanDays / 40) * DAY;
+    const segs = [[]];
+    rows.forEach((r, k) => {
+      if (k > 0 && r.ms - rows[k - 1].ms > breakGap) segs.push([]);
+      segs[segs.length - 1].push(r);
+    });
+
+    const line = (pts, color, w, dash) => {
+      const d = pts.map((p, i) => (i ? "L" : "M") + round1(p[0]).toFixed(1) + " " + round1(p[1]).toFixed(1)).join(" ");
+      mk("path", { d, fill: "none", stroke: color, "stroke-width": w, ...(dash ? { "stroke-dasharray": dash } : {}), "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+    };
+    const dim = (isThemeHit) => (state.theme === "all" || isThemeHit ? 1 : 0.25);
+
+    // series
+    const grp = mk("g", {}, svg);
+    segs.forEach((seg) => {
+      if (state.showSys) line(seg.map((r) => [X(r.ms), Y(r.s)]), C.sys, 1.4);
+      if (state.showDia) line(seg.map((r) => [X(r.ms), Y(r.di)]), C.dia, 1.4);
+      if (state.showPulse && YP) {
+        const ps = seg.filter((r) => r.p != null);
+        if (ps.length > 1) line(ps.map((r) => [X(r.ms), YP(r.p)]), C.pulse, 1.2);
+      }
+    });
+    // points (small) for density context at low count
+    if (rows.length <= 300) {
+      rows.forEach((r) => {
+        if (state.showSys) mk("circle", { cx: X(r.ms), cy: Y(r.s), r: 1.6, fill: C.sys, opacity: 0.8 }, grp);
+        if (state.showDia) mk("circle", { cx: X(r.ms), cy: Y(r.di), r: 1.6, fill: C.dia, opacity: 0.8 }, grp);
+      });
+    }
+    // noted points
+    rows.forEach((r) => {
+      if (!r.note) return;
+      const g = mk("g", {}, svg);
+      if (r.medchange && state.showSys) {
+        mk("path", { d: "M" + X(r.ms) + " " + (Y(r.s) - 6) + " L" + (X(r.ms) + 6) + " " + Y(r.s) + " L" + X(r.ms) + " " + (Y(r.s) + 6) + " L" + (X(r.ms) - 6) + " " + Y(r.s) + " Z",
+          fill: C.med, opacity: 0.85 }, g);
+      } else if (state.showSys) {
+        mk("circle", { cx: X(r.ms), cy: Y(r.s), r: 5.2, fill: "none", stroke: C.mark, "stroke-width": 1.5, opacity: 0.55 }, g);
+      }
+      if (state.highlightNoteIndex === r.i) return;
+    });
+    // pinned highlight
+    if (state.hl != null) {
+      const r = BP_ROWS[state.hl];
+      if (r && r.d >= state.from && r.d <= state.to && X) {
+        const x = X(r.ms);
+        if (x >= L - 10 && x <= W - R + 10) {
+          mk("circle", { cx: x, cy: state.showSys ? Y(r.s) : Y(r.di), r: 9, fill: "none", stroke: C.med, "stroke-width": 2 }, svg);
+        }
+      }
+    }
+
+   
+    // crosshair + interactions
+    const cross = mk("line", { x1: -10, y1: T, x2: -10, y2: T + ph, stroke: C.mark, "stroke-width": 1, opacity: 0.4, display: "none" }, svg);
+    const dotS = mk("circle", { r: 4, fill: C.sys, "stroke-width": 1.5, display: "none" }, svg);
+    const dotD = mk("circle", { r: 4, fill: C.dia, "stroke-width": 1.5, display: "none" }, svg);
+    const overlay = mk("rect", { x: L, y: T, width: pw, height: ph, fill: "transparent" }, svg);
+
+    chartGeom = { rows, X, Y, YP, L, T, pw, ph, x0, x1, C };
+
+    const nearest = (px) => {
+      const ms = x0 + ((px - L) / pw) * (x1 - x0);
+      let bi = 0, bd = 1e18;
+      rows.forEach((r, i) => { const d = Math.abs(r.ms - ms); if (d < bd) { bd = d; bi = i; } });
+      return rows[bi];
+    };
+    const tipText = (r) => {
+      let h = '<div class="tt-date">' + esc(fmtD(r.d)) + (r.t ? " · " + esc(r.t) : "") + "</div>";
+      h += '<div class="tt-bp" style="color:' + C.sys + '">' + r.s + "</div>";
+      return h;
+    };
+    const showTip = (r, clientX, clientY) => {
+      const rect = wrap.getBoundingClientRect();
+      let h = '<div class="tt-date">' + esc(fmtD(r.d)) + (r.t ? " · " + esc(r.t) : "") + "</div>";
+      h += '<div class="tt-bp">' + esc(r.s + "/" + r.di) + "</div>";
+      if (r.p != null) h += '<div class="tt-pulse">pulse ' + r.p + "</div>";
+      if (r.note) h += '<div class="tt-note">' + esc(r.note) + "</div>";
+      tip.innerHTML = h; tip.style.display = "block";
+      let lx = clientX - rect.left + 14, ly = clientY - rect.top + 14;
+      lx = Math.max(6, Math.min(lx, rect.width - Math.min(280, tip.offsetWidth || 240) - 6));
+      tip.style.left = lx + "px"; tip.style.top = ly + "px";
+    };
+    const hideTip = () => { tip.style.display = "none"; cross.setAttribute("display", "none"); dotS.setAttribute("display", "none"); dotD.setAttribute("display", "none"); };
+    const move = (evt, pinned) => {
+      const pt = svg.createSVGPoint(); pt.x = evt.clientX; pt.y = evt.clientY;
+      const loc = pt.matrixTransform(svg.getScreenCTM().inverse());
+      if (loc.x < L || loc.x > L + pw) { hideTip(); return; }
+      const r = nearest(loc.x);
+      const x = X(r.ms);
+      cross.setAttribute("x1", x); cross.setAttribute("x2", x); cross.setAttribute("display", "block");
+      if (state.showSys) { dotS.setAttribute("cx", x); dotS.setAttribute("cy", Y(r.s)); dotS.setAttribute("display", "block"); } else dotS.setAttribute("display", "none");
+      if (state.showDia) { dotD.setAttribute("cx", x); dotD.setAttribute("cy", Y(r.di)); dotD.setAttribute("display", "block"); } else dotD.setAttribute("display", "none");
+      showTip(r, evt.clientX, evt.clientY);
+    };
+    overlay.addEventListener("mousemove", (e) => move(e));
+    overlay.addEventListener("mouseleave", hideTip);
+    svg.addEventListener("click", (e) => {
+      const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+      const loc = pt.matrixTransform(svg.getScreenCTM().inverse());
+      let hit = null, hitDistance = 14;
+      if (state.showSys) {
+        rows.forEach((r) => {
+          if (!r.note) return;
+          const distance = Math.hypot(loc.x - X(r.ms), loc.y - Y(r.s));
+          if (distance <= hitDistance) { hit = r; hitDistance = distance; }
+        });
+      }
+      hideTip();
+      if (hit) { state.hl = hit.i; renderChart(); showPin(hit); }
+      else { state.hl = null; updatePinned(); renderChart(); }
+    });
+    overlay.addEventListener("touchstart", (e) => { if (e.touches[0]) move(e.touches[0]); }, { passive: true });
+
+    const st = statsFor(rows);
+    $("#chartSub").textContent = st.n + " readings · " + fmtDs(st.from) + " – " + fmtDs(st.to) +
+      (state.theme !== "all" ? " · theme: " + THEME_LABEL[state.theme] : "");
+    $("#chartTitle").textContent = rangeLabel() + (state.theme !== "all" ? " — " + THEME_LABEL[state.theme] : "");
+  }
+
+  function showPin(r) {
+    const p = $("#pinned");
+    p.innerHTML = '<div><strong>' + esc(fmtD(r.d)) + (r.t ? " " + esc(r.t) : "") + '</strong> · <span style="font-family:var(--font-mono)">' +
+      r.s + "/" + r.di + "</span> — " + esc(r.note) + "</div>" + '<button class="x" aria-label="Clear pinned reading">✕</button>';
+    p.classList.add("show");
+    p.querySelector(".x").addEventListener("click", () => { state.hl = null; updatePinned(); renderChart(); });
+  }
+  function updatePinned() {
+    const p = $("#pinned");
+    if (state.hl == null) { p.classList.remove("show"); p.innerHTML = ""; return; }
+    const r = BP_ROWS[state.hl];
+    if (r && r.note && r.d >= state.from && r.d <= state.to) showPin(r);
+    else { p.classList.remove("show"); p.innerHTML = ""; }
+  }
+
+  /* ---------- period average box (top, beside the date range) ---------- */
+  function renderAvg() {
+    const rows = rowsInRange(state.from, state.to, state.theme);
+    const st = statsFor(rows);
+    const period = rangeLabel() + (state.theme !== "all" ? " · " + THEME_LABEL[state.theme] : "");
+    if (!st.n) {
+      $("#avgVal").textContent = "—";
+      $("#avgDetail").textContent = period + " · no readings in this period";
+      return;
+    }
+    $("#avgVal").innerHTML = round1(st.avgS) + "<small>/" + round1(st.avgD) + " mmHg</small>";
+    let d = period + " · " + st.n + " reading" + (st.n === 1 ? "" : "s");
+    if (st.pu && st.pu.length) d += " · avg pulse " + Math.round(mean(st.pu));
+    $("#avgDetail").textContent = d;
+  }
+
+  /* ---------- stats tiles ---------- */
+  function renderStats() {
+    const rows = rowsInRange(state.from, state.to, state.theme);
+    const el = $("#statsRow");
+    if (!rows.length) { el.innerHTML = '<div class="stat"><div class="k">Readings</div><div class="v">0</div><div class="d">Nothing in this range</div></div>'; return; }
+    const st = statsFor(rows);
+    const tr = trendText(st.slopeY, st.n);
+    const medDay = Math.min(999, Math.round(st.n / Math.max(1, (msOf(st.to) - msOf(st.from)) / 864e5 + 1) * 100));
+    el.innerHTML =
+      tile("Typical (median)", Math.round(st.medS) + "<small>/" + Math.round(st.medD) + "</small>", st.n + " readings in range") +
+      tile("Average (mean)", round1(st.avgS) + "<small>/" + round1(st.avgD) + "</small>", "across " + st.n + " readings") +
+      tile("Readings", st.n, st.notes + " with notes") +
+      tile("At or above 140/90", Math.round(st.hiPct) + "<small>%</small>", st.hi + " of " + st.n + " readings") +
+      tile("Trend", '<span class="' + tr.cls + '">' + esc(tr.t) + "</span>", "systolic, by regression") +
+      tile("Lowest systolic", st.loR.s, fmtD(st.loR.d)) +
+      tile("Highest systolic", st.hiR.s, fmtD(st.hiR.d));
+    function tile(k, v, d) { return '<div class="stat"><div class="k">' + esc(k) + '</div><div class="v">' + v + '</div><div class="d">' + esc(d) + "</div></div>"; }
+  }
+
+  /* ---------- generic small bar chart ---------- */
+  function bars(elId, items, opts) {
+    // items: [{label, value, color}] ; zero baseline
+    const wrap = document.getElementById(elId);
+    const svg = $("#" + elId + "-svg") || null;
+    const W = Math.max(280, wrap.clientWidth), H = opts.height || 170;
+    const L = 46, R = 12, T = 8, B = 30, pw = W - L - R, ph = H - T - B;
+    const max = Math.max.apply(null, items.map((i) => i.value).concat([1]));
+    const ty = svgEl(wrap, W, H);
+    const dark = isDark();
+    const C = { grid: dark ? "#232b34" : "#e9e4da", text: dark ? "#8f98a3" : "#8a928f", ink: dark ? "#e9ebee" : "#20242a" };
+    const yStep = niceStep(max, 3);
+    for (let v = 0; v <= max + 1e-9; v += yStep) {
+      const y = T + ph - (v / (Math.ceil(max / yStep) * yStep)) * ph;
+      mk("line", { x1: L, y1: y, x2: W - R, y2: y, stroke: C.grid }, ty);
+      const t = mk("text", { x: L - 6, y: y + 4, "text-anchor": "end", "font-size": 10, fill: C.text }, ty); t.textContent = v;
+    }
+    const top = Math.ceil(max / yStep) * yStep;
+    items.forEach((it, i) => {
+      const bw = pw / items.length;
+      const h = (it.value / top) * ph;
+      mk("rect", { x: L + i * bw + Math.max(1, bw * 0.08), y: T + ph - h, width: bw * 0.84, height: Math.max(h, 1), fill: it.color, rx: 2 }, ty);
+      const t = mk("text", { x: L + i * bw + bw / 2, y: T + ph + 14, "text-anchor": "middle", "font-size": 10, fill: C.text }, ty);
+      t.textContent = it.label;
+      if (it.value > 0) {
+        const v = mk("text", { x: L + i * bw + bw / 2, y: T + ph - h - 5, "text-anchor": "middle", "font-size": 10.5, fill: C.ink, "font-weight": 600 }, ty);
+        v.textContent = it.value;
+      }
+    });
+  }
+  function svgEl(wrap, W, H) {
+    let s = wrap.querySelector("svg");
+    if (!s) { s = document.createElementNS(svgNS, "svg"); wrap.appendChild(s); }
+    s.setAttribute("width", W); s.setAttribute("height", H); s.setAttribute("viewBox", "0 0 " + W + " " + H); s.innerHTML = "";
+    return s;
+  }
+  function niceStep(max, n) {
+    const raw = max / n, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const norm = raw / mag;
+    return Math.max(1, (norm >= 5 ? 5 : norm >= 2 ? 2 : 1) * mag); // count axes stay whole
+  }
+
+  /* ---------- notes & sentiment ---------- */
+  function renderNotes() {
+    const rows = rowsInRange(state.from, state.to, state.theme);
+    const noted = rows.filter((r) => r.note).sort((a, b) => (b.d > a.d ? 1 : b.d < a.d ? -1 : b.i - a.i));
+    const pos = noted.filter((r) => r.sent === "pos").length,
+          neg = noted.filter((r) => r.sent === "neg").length,
+          neu = noted.filter((r) => r.sent === "neu").length;
+    const dark = isDark();
+    bars("sentBars", [
+      { label: "calm / good", value: pos, color: dark ? "#5fd08a" : "#2e7d4f" },
+      { label: "rough / stressed", value: neg, color: dark ? "#f0665a" : "#d6493b" },
+      { label: "neutral", value: neu, color: dark ? "#5b9cf6" : "#2a6fd6" },
+    ], { height: 150 });
+    const ll = $("#notesList");
+    if (!noted.length) { ll.innerHTML = '<div class="empty">No notes attached to readings in this range.</div>'; return; }
+    const shown = noted.slice(0, 80);
+    ll.innerHTML = shown.map((r) =>
+      '<button class="note-item" data-i="' + r.i + '">' +
+      '<div class="ni-top"><span class="ni-date">' + esc(fmtD(r.d)) + (r.t ? " " + esc(r.t) : "") + "</span>" +
+      '<span class="ni-bp">' + r.s + "/" + r.di + "</span></div>" +
+      '<div class="ni-text">' + esc(r.note) + "</div>" +
+      '<div class="ni-tags">' + r.tags.map((t) => '<span class="ntag">' + esc(THEME_LABEL[t] || t) + "</span>").join("") +
+      (r.sent === "neg" ? '<span class="ntag sent-neg">sentiment: rough</span>' : r.sent === "pos" ? '<span class="ntag">sentiment: calm</span>' : "") +
+      (r.medchange ? '<span class="ntag">med change</span>' : "") +
+      "</div></button>").join("") +
+      (noted.length > 80 ? '<div class="empty">+ ' + (noted.length - 80) + " more notes</div>" : "");
+    ll.querySelectorAll(".note-item").forEach((b) => b.addEventListener("click", () => {
+      const r = BP_ROWS[+b.dataset.i];
+      state.hl = r.i; renderChart(); showPin(r);
+      $("#chartWrap").scrollIntoView({ behavior: "smooth", block: "center" });
+    }));
+  }
+
+  /* ---------- histograms ---------- */
+  function histogram(svgId, rows, key, flagFrom, color, darkColor) {
+    const wrap = $("#" + svgId).parentElement;
+    const W = Math.max(280, wrap.clientWidth), H = 140;
+    const L = 34, R = 10, T = 8, B = 26, pw = W - L - R, ph = H - T - B;
+    const svg = svgEl(wrap, W, H);
+    const dark = isDark();
+    const C = { grid: dark ? "#232b34" : "#e9e4da", text: dark ? "#8f98a3" : "#8a928f", ink: dark ? "#e9ebee" : "#20242a" };
+    if (!rows.length) { const t = mk("text", { x: W / 2, y: H / 2, "text-anchor": "middle", fill: C.text, "font-size": 12 }, svg); t.textContent = "No readings"; return; }
+    const vals = rows.map((r) => r[key]);
+    const lo = Math.floor(Math.min.apply(null, vals) / 5) * 5, hi = Math.ceil(Math.max.apply(null, vals) / 5) * 5;
+    const n = Math.max(3, Math.round((hi - lo) / 5));
+    const bins = new Array(n).fill(0);
+    vals.forEach((v) => { bins[Math.min(n - 1, Math.floor((v - lo) / 5))]++; });
+    const max = Math.max.apply(null, bins);
+    const yStep = niceStep(max, 3), top = Math.ceil(max / yStep) * yStep;
+    for (let v = 0; v <= top; v += yStep) {
+      const y = T + ph - (v / top) * ph;
+      mk("line", { x1: L, y1: y, x2: W - R, y2: y, stroke: C.grid }, svg);
+      const t = mk("text", { x: L - 5, y: y + 3.5, "text-anchor": "end", "font-size": 9.5, fill: C.text }, svg); t.textContent = v;
+    }
+    const bw = pw / n;
+    bins.forEach((c, i) => {
+      const h = (c / top) * ph;
+      const binLo = lo + i * 5;
+      mk("rect", { x: L + i * bw + 1, y: T + ph - h, width: Math.max(1, bw - 2), height: Math.max(h, 0.5),
+        fill: binLo >= flagFrom ? (dark ? darkColor : color) : C.grid, rx: 1.5 }, svg);
+    });
+    for (let v = lo; v <= hi; v += Math.max(10, Math.round((hi - lo) / 6 / 5) * 5)) {
+      const x = L + ((v - lo) / 5) * bw;
+      const t = mk("text", { x, y: T + ph + 15, "text-anchor": "middle", "font-size": 9.5, fill: C.text }, svg); t.textContent = v;
+    }
+    const med = median(vals);
+    const mx = L + ((med - lo) / 5) * bw;
+    mk("line", { x1: mx, y1: T, x2: mx, y2: T + ph, stroke: C.ink, "stroke-width": 1.5, "stroke-dasharray": "4,3" }, svg);
+    const lptr = mx + 74 > W - R;
+    const t = mk("text", { x: mx + (lptr ? -6 : 6), y: T + 12, "text-anchor": lptr ? "end" : "start", "font-size": 9.5, fill: C.text }, svg);
+    t.textContent = "median " + Math.round(med);
+  }
+
+  /* ---------- insights ---------- */
+  const medOf = (rows, key) => median(rows.map((r) => r[key]));
+  function sd(a) { if (a.length < 2) return null; const m = mean(a); return Math.sqrt(a.reduce((s, x) => s + (x - m) * (x - m), 0) / (a.length - 1)); }
+
+  function buildInsights(rows) {
+    const cards = [];
+    const quiet = rows.filter((r) => !r.note);
+    const sleepPoor = rows.filter((r) => r.tags.indexOf("sleep") >= 0 && /didn'?t sleep|not sleeping|haven'?t been sleeping|didn't sleep|tired/i.test(r.note || ""));
+    if (sleepPoor.length >= 3 && quiet.length >= 10) {
+      const sW = medOf(sleepPoor, "s"), sR = medOf(quiet, "s");
+      const dW = medOf(sleepPoor, "di"), dR = medOf(quiet, "di");
+      cards.push({
+        h: "Readings with bad-sleep notes vs. unnoted readings",
+        p: "Readings with notes about bad sleep came in at a typical <strong>" + Math.round(sW) + "/" + Math.round(dW) + "</strong>, versus <strong>" +
+          Math.round(sR) + "/" + Math.round(dR) + "</strong> for readings with no note. That's a " +
+          (Math.round(sW - sR) >= 0 ? "+" : "") + Math.round(sW - sR) + "/" + (Math.round(dW - dR) >= 0 ? "+" : "") + Math.round(dW - dR) +
+          " difference — an association, not proof. The unnoted group isn't confirmed well-rested sleep, it's just readings with no note.",
+        n: sleepPoor.length + " sleep-poor notes vs " + quiet.length + " unnoted readings (unpaired, keyword-tagged)"
+      });
+    }
+    const before = rows.filter((r) => r.note && /before workout|before blood|before\b/i.test(r.note) && r.tags.indexOf("exercise") >= 0 || (r.note && /before workout/.test(r.note)));
+    const after = rows.filter((r) => r.note && /after (workout|exercise|gym|run|crossfit)|post workout/.test(r.note));
+    if (before.length >= 2 && after.length >= 2) {
+      const sB = medOf(before, "s"), sA = medOf(after, "s"), dB = medOf(before, "di"), dA = medOf(after, "di");
+      cards.push({
+        h: "Before vs. after a workout",
+        p: "Readings with \"before workout\" notes: <strong>" + Math.round(sB) + "/" + Math.round(dB) + "</strong>. Readings with \"after workout\" notes: <strong>" + Math.round(sA) + "/" + Math.round(dA) +
+          "</strong> — a difference of <strong>" + (Math.round(sA - sB) >= 0 ? "+" : "") + Math.round(sA - sB) + "/" + (Math.round(dA - dB) >= 0 ? "+" : "") + Math.round(dA - dB) +
+          "</strong>. These are unpaired keyword-tagged groups (different readings, not before/after pairs), so this describes the two sets, not how any one workout played out.",
+        n: before.length + " before-workout vs " + after.length + " after-workout readings (unpaired)"
+      });
+    }
+    // doctor visits: white coat?
+    const clinic = rows.filter((r) => r.tags.indexOf("clinic") >= 0);
+    const home = rows.filter((r) => !r.note || r.tags.indexOf("clinic") < 0);
+    if (clinic.length >= 3 && home.length >= 10) {
+      const sC = medOf(clinic, "s"), sH = medOf(home, "s"), dC = medOf(clinic, "di"), dH = medOf(home, "di");
+      const delta = Math.round(sC - sH);
+      const verdict = delta >= 0 ? "This is descriptive only — these unpaired groups can't prove a white-coat effect either way." : "No white-coat pattern in these notes; clinic readings came in slightly lower.";
+      cards.push({
+        h: "Clinic readings vs. all other readings",
+        p: "Readings tagged as clinic/appointment visits: typical <strong>" + Math.round(sC) + "/" + Math.round(dC) +
+          "</strong>. All other readings: <strong>" + Math.round(sH) + "/" + Math.round(dH) + "</strong> — clinic systolic runs " +
+          (delta >= 0 ? "+" : "") + delta + " points. " + verdict,
+        n: clinic.length + " clinic-tagged readings vs " + home.length + " non-clinic readings (unpaired, keyword-tagged)"
+      });
+    }
+    const alc = rows.filter((r) => r.tags.indexOf("alcohol") >= 0);
+    if (alc.length >= 3) {
+      const base = rows.filter((r) => r.tags.indexOf("alcohol") < 0);
+      cards.push({
+        h: "Readings with alcohol notes",
+        p: "Notes mentioning drinking came in at a typical <strong>" + Math.round(medOf(alc, "s")) + "/" + Math.round(medOf(alc, "di")) +
+          "</strong> vs <strong>" + Math.round(medOf(base, "s")) + "/" + Math.round(medOf(base, "di")) +
+          "</strong> for everything else — nearly the same on this small sample, so the individual notes say more than the medians do.",
+        n: alc.length + " alcohol-mention readings (too few for a pattern)"
+      });
+    }
+    const timed = rows.filter((r) => r.t);
+    const early = timed.filter((r) => +r.t.slice(0, 2) < 10);
+    const later = timed.filter((r) => +r.t.slice(0, 2) >= 10);
+    if (early.length >= 3 && later.length >= 3) {
+      cards.push({
+        h: "Before 10am vs. later in the day",
+        p: "Mornings (before 10) ran <strong>" + Math.round(medOf(early, "s")) + "/" + Math.round(medOf(early, "di")) + "</strong>, later readings <strong>" +
+          Math.round(medOf(later, "s")) + "/" + Math.round(medOf(later, "di")) + "</strong>. ",
+        n: early.length + " morning vs " + later.length + " later readings (only " + timed.length + " have times)"
+      });
+    }
+    const days = {};
+    rows.forEach((r) => { days[r.d] = true; });
+    const dl = Object.keys(days).sort();
+    let best = 1, run = 1;
+    for (let i = 1; i < dl.length; i++) { run = (msOf(dl[i]) - msOf(dl[i - 1]) === 864e5) ? run + 1 : 1; best = Math.max(best, run); }
+    const spanD = Math.max(1, Math.round((msOf(rows[rows.length - 1].d) - msOf(rows[0].d)) / 864e5) + 1);
+    cards.push({
+      h: "How you logged",
+      p: "You measured on <strong>" + dl.length + "</strong> of the " + spanD + " days in this range, with a longest streak of <strong>" + best + " consecutive days</strong>. " +
+        (best >= 14 ? "That's a solid logging habit — the trend line is trustworthy here." : best >= 7 && spanD <= 60 ? "Decent coverage for this short stretch." : "Coverage is intermittent, with long stretches unmeasured — long-range trends are sturdier than day-to-day details."),
+      n: rows.length + " readings total"
+    });
+    const ssd = sd(rows.map((r) => r.s));
+    if (ssd != null && rows.length >= 10) {
+      const iqr = quartile(rows.map((r) => r.s), 0.75) - quartile(rows.map((r) => r.s), 0.25);
+      cards.push({
+        h: "How much you swing",
+        p: "Middle 50% of your systolic readings span <strong>" + Math.round(iqr) + " points</strong> (std dev " + round1(ssd) + "). " +
+          (iqr > 22 ? "That's a wide band — context (sleep, workouts, stress) explains more of your numbers than any single trend." : "A fairly tight band — your medians are meaningful."),
+        n: rows.length + " readings"
+      });
+    }
+    const medNotes = rows.filter((r) => r.medchange).sort((a, b) => (b.d > a.d ? 1 : b.d < a.d ? -1 : b.i - a.i));
+    if (medNotes.length >= 2) {
+      cards.push({
+        h: "Medication timeline",
+        p: "<strong>" + medNotes.length + " med-change notes</strong> in this range. Latest: " + fmtDs(medNotes[0].d) + " — " + esc(medNotes[0].note) + ". " +
+          (medNotes.length > 1 ? "Earliest: " + fmtDs(medNotes[medNotes.length - 1].d) + " — " + esc(medNotes[medNotes.length - 1].note) + "." : ""),
+        n: "red diamonds on the chart mark these"
+      });
+    }
+    return cards;
+  }
+  function quartile(a, q) { const b = a.slice().sort((x, y) => x - y); const p = (b.length - 1) * q; const lo = Math.floor(p); return b[lo] + (b[Math.ceil(p)] - b[lo]) * (p - lo); }
+  function renderInsights() {
+    const rows = rowsInRange(state.from, state.to, state.theme);
+    const el = $("#insights");
+    if (rows.length < 3) { el.innerHTML = '<div class="empty">Not enough readings in this range for patterns.</div>'; return; }
+    el.innerHTML = buildInsights(rows).map((c) =>
+      '<div class="insight"><h3>' + esc(c.h) + "</h3><p>" + c.p + '</p><div class="n">' + esc(c.n) + "</div></div>").join("");
+  }
+
+  /* ---------- previous-stretch comparison ---------- */
+  function prevRange(from, to) {
+    const f = msOf(from), t = msOf(to);
+    const len = t - f + 864e5;
+    const pto = new Date(f - 864e5), pfrom = new Date(f - len);
+    const iso = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    return { from: iso(pfrom), to: iso(pto) };
+  }
+  function renderCompare() {
+    const el = $("#compareWrap");
+    const rows = rowsInRange(state.from, state.to, "all");
+    const pr = prevRange(state.from, state.to);
+    const prev = rowsInRange(pr.from, pr.to, "all");
+    $("#compareLede").textContent = "Compares " + fmtDs(state.from) + " – " + fmtDs(state.to) + " against " + fmtDs(pr.from) + " – " + fmtDs(pr.to) + ".";
+    if (!rows.length || !prev.length) {
+      el.innerHTML = '<div class="empty">Need readings in both windows to compare' + (!prev.length ? " — nothing logged " + fmtDs(pr.from) + " – " + fmtDs(pr.to) : "") + ".</div>";
+      return;
+    }
+    const a = statsFor(rows), b = statsFor(prev);
+    const dS = a.medS - b.medS, dD = a.medD - b.medD, dP = a.hiPct - b.hiPct;
+    const verdict = Math.abs(dS) < 2 && Math.abs(dD) < 2
+      ? "Essentially unchanged — same typical, same stretch of days."
+      : (dS > 0 || dD > 0 ? "Running <strong>higher</strong> than the window before." : "Running <strong>lower</strong> than the window before.");
+    const arrow = (x, suffix) => x > 0 ? " <span style='color:var(--accent);font-weight:600'>▲" + (suffix || "") + "</span>" : x < 0 ? " <span class='ok' style='color:#2e7d4f;font-weight:600'>▼" + (suffix || "") + "</span>" : "";
+    el.innerHTML = '<div class="verdict">' + verdict + "</div>" +
+      '<table class="compare-table"><thead><tr><th></th><th>' + esc(fmtDs(state.from)) + " – " + esc(fmtDs(state.to)) +
+      "</th><th>" + esc(fmtDs(pr.from)) + " – " + esc(fmtDs(pr.to)) + "</th><th>Change</th></tr></thead><tbody>" +
+      ct("Typical (median)", Math.round(a.medS) + "/" + Math.round(a.medD), Math.round(b.medS) + "/" + Math.round(b.medD), arrow(dS)) +
+      ct("Average (mean)", round1(a.avgS) + "/" + round1(a.avgD), round1(b.avgS) + "/" + round1(b.avgD), "") +
+      ct("Readings", a.n, b.n, "") +
+      ct("At or above 140/90", Math.round(a.hiPct) + "% (" + a.hi + ")", Math.round(b.hiPct) + "% (" + b.hi + ")", arrow(dP)) +
+      "</tbody></table>";
+    function ct(k, x, y, ch) { return "<tr><td>" + esc(k) + "</td><td><strong>" + esc(x) + "</strong></td><td>" + esc(y) + "</td><td>" + ch + "</td></tr>"; }
+  }
+
+  /* ---------- ask ---------- */
+  const EXAMPLES = [
+    "What were the general comments or sentiment?",
+    "What was my typical BP in this range?",
+    "Compare the last 30 days with the 30 before that",
+    "How does my BP look after sleep-poor nights?",
+    "Show me the exercise readings",
+    "How many readings were above 140/90?",
+  ];
+  function parseScope(q) {
+    const lo = q.toLowerCase();
+    const years = (lo.match(/\b20\d\d\b/g) || []);
+    const m = lo.match(/last\s+(\d+)\s*(days?|d|weeks?|w|months?|years?)/);
+    if (m) {
+      const n = +m[1], u = m[2][0];
+      const days = u === "d" ? n : u === "w" ? n * 7 : u === "m" ? n * 30 : n * 365;
+      const to = new Date(msOf(MAX_D)), from = new Date(msOf(MAX_D) - days * 864e5);
+      const iso = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+      return { rows: rowsInRange(iso(from), iso(to), "all"), label: "the last " + m[1] + " " + m[2] };
+    }
+    if (/this year/.test(lo)) { const y = "2026"; return { rows: rowsInRange(y + "-01-01", "2026-12-31", "all"), label: "2026" }; }
+    if (/last year/.test(lo)) return { rows: rowsInRange("2025-01-01", "2025-12-31", "all"), label: "2025" };
+    if (years.length) {
+      const all = [];
+      years.forEach((y) => { if (y >= "2012" && y <= "2026") all.push({ rows: rowsInRange(y + "-01-01", y + "-12-31", "all"), label: y }); });
+      if (all.length === 2 && /compar|vs\b|versus/.test(lo)) return { compare: all };
+      if (all.length === 1) return all[0];
+    }
+    return { rows: rowsInRange(state.from, state.to, state.theme), label: rangeLabel() + (state.theme !== "all" ? " (" + THEME_LABEL[state.theme] + ")" : "") };
+  }
+  const bp = (s, d) => Math.round(s) + "/" + Math.round(d);
+
+  function doAsk(raw) {
+    const q = (raw || "").trim();
+    const ans = $("#answer");
+    ans.classList.add("show");
+    if (!q) { ans.innerHTML = '<p class="ans-q">Ask me anything</p><p>Try one of the examples below the box.</p>'; return; }
+    const lo = q.toLowerCase();
+    const scope = parseScope(q);
+    let html = '<p class="ans-q">' + esc(q) + "</p>";
+
+    // compare two named years
+    if (scope.compare) {
+      const a = statsFor(scope.compare[0].rows), b = statsFor(scope.compare[1].rows);
+      if (a.n && b.n) {
+        html += "<p><strong>" + esc(scope.compare[0].label) + ":</strong> typical " + bp(a.medS, a.medD) + ", average " + round1(a.avgS) + "/" + round1(a.avgD) + ", " +
+          Math.round(a.hiPct) + "% at or above 140/90 across " + a.n + " readings.</p>" +
+          "<p><strong>" + esc(scope.compare[1].label) + ":</strong> typical " + bp(b.medS, b.medD) + ", average " + round1(b.avgS) + "/" + round1(b.avgD) + ", " +
+          Math.round(b.hiPct) + "% at or above 140/90 across " + b.n + " readings.</p>";
+        const ds = Math.round(b.medS - a.medS), dp = Math.round(b.hiPct - a.hiPct);
+        const dirS = ds > 0 ? "moved up by <strong>" + ds + "</strong>" : ds < 0 ? "moved down by <strong>" + Math.abs(ds) + "</strong>" : "held steady at <strong>" + Math.round(a.medS) + "</strong>";
+        const dirP = dp > 0 ? "rose by <strong>" + dp + "</strong> points" : dp < 0 ? "fell by <strong>" + Math.abs(dp) + "</strong> points" : "held steady";
+        html += "<p>From " + esc(scope.compare[0].label) + " to " + esc(scope.compare[1].label) + ", the typical systolic " + dirS +
+          " points and the share at or above 140/90 " + dirP + ".</p>";
+      } else html += "<p>Not enough readings to compare those years.</p>";
+      ans.innerHTML = html; return;
+    }
+    const rows = scope.rows, label = scope.label;
+    const st = statsFor(rows);
+    if (!st.n) { ans.innerHTML = html + "<p>No readings in " + esc(label) + " to answer from.</p>"; return; }
+
+    const has = (...ws) => ws.some((w) => lo.indexOf(w) >= 0);
+
+    // comparison of two 30-day-ish windows
+    if (/compar|vs\b|versus|before that|difference/.test(lo)) {
+      const pr = prevRange(state.from, state.to);
+      const prev = rowsInRange(pr.from, pr.to, "all"), cur = rowsInRange(state.from, state.to, "all");
+      if (cur.length && prev.length) {
+        const a = statsFor(cur), b = statsFor(prev);
+        html += "<p><strong>" + esc(fmtDs(state.from)) + " – " + esc(fmtDs(state.to)) + ":</strong> typical " + bp(a.medS, a.medD) + ", " + Math.round(a.hiPct) + "% above 140/90 (" + a.n + " readings).</p>" +
+          "<p><strong>" + esc(fmtDs(pr.from)) + " – " + esc(fmtDs(pr.to)) + ":</strong> typical " + bp(b.medS, b.medD) + ", " + Math.round(b.hiPct) + "% above 140/90 (" + b.n + " readings).</p>" +
+          "<p>So the current stretch runs <strong>" + (Math.round(a.medS - b.medS) >= 0 ? "+" : "") + Math.round(a.medS - b.medS) + "/" + (Math.round(a.medD - b.medD) >= 0 ? "+" : "") + Math.round(a.medD - b.medD) +
+          "</strong> vs the window before, with the high-reading share " + (a.hiPct - b.hiPct >= 0 ? "up " : "down ") + Math.abs(Math.round(a.hiPct - b.hiPct)) + " points.</p>" +
+          "<p>You can change the comparison window with the date controls above.</p>";
+      } else html += "<p>Not enough readings in both windows to compare.</p>";
+    }
+    // sentiment / comments
+    else if (has("sentiment", "comment", "notes about", "general", "what did you note", "note about", "vibes", "feeling")) {
+      const noted = rows.filter((r) => r.note);
+      const pos = noted.filter((r) => r.sent === "pos").length, neg = noted.filter((r) => r.sent === "neg").length, neu = noted.length - pos - neg;
+      const tc = {}; rows.forEach((r) => r.tags.forEach((t) => { tc[t] = (tc[t] || 0) + 1; }));
+      const top = Object.keys(tc).sort((a, b) => tc[b] - tc[a]).slice(0, 5);
+      html += "<p>In " + esc(label) + ", <strong>" + noted.length + "</strong> of " + rows.length + " readings have notes. " +
+        (noted.length ? "Of those, <strong>" + pos + "</strong> read calm or good, <strong>" + neg + "</strong> read rough or stressed, and <strong>" + neu + "</strong> read neutral — that calm/rough split tells the story of why context matters here." : "No notes in this range, so I can't describe sentiment.") + "</p>";
+      if (top.length) html += "<p>The most common contexts were " + top.map((t) => "<strong>" + esc(THEME_LABEL[t]) + "</strong> (" + tc[t] + ")").join(", ") + ".</p>";
+      const quotes = noted.filter((r) => r.sent === "neg").slice(-3).concat(noted.filter((r) => r.sent === "pos").slice(-2));
+      if (quotes.length) {
+        html += "<p>Representative notes:</p><ul>" + quotes.slice(0, 5).map((r) =>
+          "<li>“" + esc(r.note) + "” — <strong>" + r.s + "/" + r.di + "</strong>, " + esc(fmtDs(r.d)) + "</li>").join("") + "</ul>";
+      }
+    }
+    // medications
+    else if (has("med", "pill", "lisinopril", "losartan", "valsartan", "amlodipine", "dose", "beet")) {
+      const meds = rows.filter((r) => r.tags.indexOf("meds") >= 0).sort((a, b) => (a.d > b.d ? 1 : a.d < b.d ? -1 : a.i - b.i));
+      if (!meds.length) html += "<p>No medication mentions in " + esc(label) + ".</p>";
+      else {
+        html += "<p><strong>" + meds.length + "</strong> readings in " + esc(label) + " mention meds:</p><ul>" +
+          meds.slice(-8).map((r) => "<li><strong>" + esc(fmtDs(r.d)) + "</strong> — “" + esc(r.note) + "” <span style='font-family:var(--font-mono)'>" + r.s + "/" + r.di + "</span></li>").join("") + "</ul>";
+        if (meds.length > 8) html += "<p>…plus " + (meds.length - 8) + " older ones; widen the range to see the full trail.</p>";
+      }
+    }
+    // sleep
+    else if (has("sleep", "insomnia", "tired", "rest")) {
+      const sp = rows.filter((r) => r.tags.indexOf("sleep") >= 0);
+      if (sp.length < 2) html += "<p>Only " + sp.length + " sleep-mention reading(s) in this range — not enough for a pattern.</p>";
+      else {
+        const rest = rows.filter((r) => r.tags.indexOf("sleep") < 0);
+        html += "<p>Readings tagged sleep ran a typical <strong>" + bp(medOf(sp, "s"), medOf(sp, "di")) + "</strong> (" + sp.length + " readings) vs <strong>" +
+          bp(medOf(rest, "s"), medOf(rest, "di")) + "</strong> for the rest (" + rest.length + ").</p><ul>" +
+          sp.slice(-5).map((r) => "<li>“" + esc(r.note) + "” — <strong>" + r.s + "/" + r.di + "</strong>, " + esc(fmtDs(r.d)) + "</li>").join("") + "</ul>";
+      }
+    }
+    // exercise
+    else if (has("workout", "exercise", "gym", "run", "marathon", "crossfit", "spin")) {
+      const ex = rows.filter((r) => r.tags.indexOf("exercise") >= 0);
+      if (!ex.length) html += "<p>No exercise-tagged readings in " + esc(label) + ".</p>";
+      else {
+        const before = ex.filter((r) => /before workout/.test(r.note || ""));
+        const after = ex.filter((r) => /after (workout|exercise|gym|run|crossfit)|post workout/.test(r.note || ""));
+        html += "<p><strong>" + ex.length + "</strong> exercise readings in " + esc(label) + ", typical " + bp(medOf(ex, "s"), medOf(ex, "di")) + ".</p>";
+        if (before.length >= 1 && after.length >= 1)
+          html += "<p>Before workouts: <strong>" + bp(medOf(before, "s"), medOf(before, "di")) + "</strong> (" + before.length + "). After: <strong>" + bp(medOf(after, "s"), medOf(after, "di")) + "</strong> (" + after.length + ").</p>";
+      }
+    }
+    // alcohol
+    else if (has("alcohol", "drink", "drank", "beer", "whiskey", "whisky")) {
+      const al = rows.filter((r) => r.tags.indexOf("alcohol") >= 0);
+      html += al.length ? "<p><strong>" + al.length + "</strong> alcohol-mention readings, typical <strong>" + bp(medOf(al, "s"), medOf(al, "di")) + "</strong>.</p><ul>" +
+        al.map((r) => "<li>“" + esc(r.note) + "” — <strong>" + r.s + "/" + r.di + "</strong>, " + esc(fmtDs(r.d)) + "</li>").join("") + "</ul>"
+        : "<p>No alcohol mentions in this range.</p>";
+    }
+    // stress
+    else if (has("stress", "anxiety", "worried", "fight", "nervous") && !has("sentiment", "comment")) {
+      const st2 = rows.filter((r) => r.tags.indexOf("stress") >= 0 || r.sent === "neg");
+      html += st2.length ? "<p><strong>" + st2.length + "</strong> stressed/rough readings, typical <strong>" + bp(medOf(st2, "s"), medOf(st2, "di")) + "</strong>.</p><ul>" +
+        st2.slice(-6).map((r) => "<li>“" + esc(r.note || "unnoted") + "” — <strong>" + r.s + "/" + r.di + "</strong>, " + esc(fmtDs(r.d)) + "</li>").join("") + "</ul>"
+        : "<p>No stress-linked readings in this range.</p>";
+    }
+    // high readings
+    else if (has("140", "90", "above", "over", "high", "hypertension", "flagged", "danger")) {
+      html += "<p><strong>" + st.hi + "</strong> of " + st.n + " readings (" + Math.round(st.hiPct) + "%) were at or above 140/90 in " + esc(label) + ".</p>";
+      const worst = rows.filter((r) => r.s >= 140 || r.di >= 90).sort((a, b) => (b.s + b.di) - (a.s + a.di)).slice(0, 5);
+      if (worst.length) html += "<p>The five worst: </p><ul>" + worst.map((r) =>
+        "<li><strong>" + r.s + "/" + r.di + "</strong> — " + esc(fmtDs(r.d)) + (r.note ? " · “" + esc(r.note) + "”" : "") + "</li>").join("") + "</ul>";
+    }
+    // extremes
+    else if (has("highest", "maximum", "peak", "worst", "biggest")) {
+      html += "<p>Highest systolic was <strong>" + st.hiR.s + "</strong> (" + st.hiR.s + "/" + st.hiR.di + ") on " + esc(fmtD(st.hiR.d)) +
+        (st.hiR.note ? ", noted: “" + esc(st.hiR.note) + "”" : ".") + "</p>";
+    }
+    else if (has("lowest", "minimum", "best", "smallest")) {
+      html += "<p>Lowest systolic was <strong>" + st.loR.s + "</strong> (" + st.loR.s + "/" + st.loR.di + ") on " + esc(fmtD(st.loR.d)) +
+        (st.loR.note ? ", noted: “" + esc(st.loR.note) + "”" : ".") + "</p>";
+    }
+    // trend
+    else if (has("trend", "better", "worse", "improving", "rising", "falling", "direction")) {
+      const tr = trendText(st.slopeY, st.n);
+      html += "<p>In " + esc(label) + ", systolic is <strong>" + esc(tr.t) + "</strong> across " + st.n + " readings. The trend line on the chart shows the fitted direction; hover any point for the day's context.</p>";
+    }
+    // pulse
+    else if (has("pulse", "heart rate", "bpm")) {
+      const pu = rows.map((r) => r.p).filter((x) => x != null);
+      if (!pu.length) html += "<p>No pulse readings recorded in this range.</p>";
+      else html += "<p>Pulse across " + pu.length + " readings in " + esc(label) + ": typical <strong>" + Math.round(median(pu)) + "</strong> bpm, average " + round1(mean(pu)) + ", from " + Math.min.apply(null, pu) + " to " + Math.max.apply(null, pu) + ". Turn on the pulse series above to see it plotted.</p>";
+    }
+    // count
+    else if (has("how many", "count", "number of")) {
+      html += "<p><strong>" + st.n + "</strong> readings in " + esc(label) + ", " + st.notes + " with notes.</p>";
+    }
+    // typical / average — the core question
+    else if (has("typical", "average", "mean", "median", "usual", "normal", "around", "overall", "bp")) {
+      html += "<p>In " + esc(label) + ", your typical (median) blood pressure was <strong>" + bp(st.medS, st.medD) + "</strong> across " + st.n + " readings" +
+        (st.notes ? ", " + st.notes + " with notes" : "") + ". The average came out to " + round1(st.avgS) + "/" + round1(st.avgD) +
+        " — the median is what I'd tell your provider, since single high readings pull the average around.</p>";
+      const tr = trendText(st.slopeY, st.n);
+      html += "<p>Trend: <strong>" + esc(tr.t) + "</strong>. " + Math.round(st.hiPct) + "% of these readings were at or above 140/90.</p>";
+    }
+    else {
+      html += "<p>Here's what I can tell you about " + esc(label) + ": <strong>" + st.n + "</strong> readings, typical <strong>" + bp(st.medS, st.medD) + "</strong>, " +
+        Math.round(st.hiPct) + "% at or above 140/90.</p>" +
+        "<p>I answer best about: typical/average BP, highest &amp; lowest, how many were high, trend, notes and sentiment, and the themes sleep / exercise / meds / stress / alcohol / doctor visits. Try something like “how does my BP look after sleep-poor nights?” or “compare 2019 with 2024”.</p>";
+    }
+    ans.innerHTML = html;
+  }
+
+  /* ---------- wiring ---------- */
+  function renderAll() {
+    renderAvg();
+    renderChart(); renderStats(); renderNotes();
+    const rows = rowsInRange(state.from, state.to, state.theme);
+    histogram("hist", rows, "s", 140, "#d6493b", "#f0665a");
+    histogram("hist2", rows, "di", 90, "#2a6fd6", "#5b9cf6");
+    renderInsights(); renderCompare();
+  }
+
+  function setCustomRange(f, t) {
+    if (f && t && f > t) { const x = f; f = t; t = x; }
+    state.from = f || MIN_D; state.to = t || MAX_D;
+    state.hl = null;
+    document.querySelectorAll("#rangeSeg button").forEach((b) => b.setAttribute("aria-pressed", "false"));
+    renderAll();
+  }
+
+  document.querySelectorAll("#rangeSeg button").forEach((b) => b.addEventListener("click", () => {
+    document.querySelectorAll("#rangeSeg button").forEach((x) => x.setAttribute("aria-pressed", "false"));
+    b.setAttribute("aria-pressed", "true");
+    const r = b.dataset.range;
+    state.hl = null;
+    if (r === "all") { state.from = MIN_D; state.to = MAX_D; }
+    else {
+      const to = new Date(msOf(MAX_D)), from = new Date(msOf(MAX_D) - (+r) * 864e5);
+      const iso = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+      state.from = iso(from); state.to = iso(to);
+    }
+    $("#fromDate").value = state.from; $("#toDate").value = state.to;
+    renderAll();
+  }));
+  $("#fromDate").addEventListener("change", (e) => setCustomRange(e.target.value, $("#toDate").value));
+  $("#toDate").addEventListener("change", (e) => setCustomRange($("#fromDate").value, e.target.value));
+
+  document.querySelectorAll("#themeChips button").forEach((b) => b.addEventListener("click", () => {
+    document.querySelectorAll("#themeChips button").forEach((x) => x.setAttribute("aria-pressed", "false"));
+    b.setAttribute("aria-pressed", "true");
+    state.theme = b.dataset.theme;
+    state.hl = null;
+    renderAll();
+  }));
+
+  [["#tgSys", "showSys"], ["#tgDia", "showDia"], ["#tgPulse", "showPulse"], ["#tgTrend", "showTrend"]].forEach(([id, key]) => {
+    $(id).addEventListener("click", () => {
+      state[key] = !state[key];
+      $(id).setAttribute("aria-pressed", String(state[key]));
+      renderChart();
+    });
+  });
+
+  $("#askBtn").addEventListener("click", () => doAsk($("#askInput").value));
+  $("#askInput").addEventListener("keydown", (e) => { if (e.key === "Enter") doAsk($("#askInput").value); });
+  const exEl = $("#examples");
+  exEl.innerHTML = EXAMPLES.map((x, i) => '<button data-x="' + i + '">' + esc(x) + "</button>").join("");
+  exEl.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { doAsk(EXAMPLES[+b.dataset.x]); }));
+
+  let rsz = null;
+  window.addEventListener("resize", () => { clearTimeout(rsz); rsz = setTimeout(() => renderChart(), 160); });
+
+  /* ---------- init ---------- */
+  $("#fromDate").value = state.from; $("#toDate").value = state.to;
+  $("#dataLine").textContent = BP_ROWS.length + " readings · " + fmtD(MIN_D) + " – " + fmtD(MAX_D) + " · " + BP_NOTES.length + " unique notes";
+  $("#foot").innerHTML = "Built from the blood pressure log: <code>" + BP_ROWS.length + "</code> readings, <code>" +
+    fmtD(MIN_D) + "</code> through <code>" + fmtD(MAX_D) + "</code>. Note themes and sentiment are keyword guesses from the log's own notes — take them as a lens, not a diagnosis. " +
+    "Pulse was recorded on <code>" + BP_ROWS.filter((r) => r.p != null).length + "</code> readings; times on <code>" + BP_ROWS.filter((r) => r.t).length + "</code>.";
+  renderAll();
+})();
+</script>
+</body>
+</html>
